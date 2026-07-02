@@ -99,7 +99,7 @@ where
         let cells: Vec<Cell<'_>> = row.iter().map(cell_ref).collect();
         encoder.write_row(&cells).map_err(io_err)?;
         rows_written += 1;
-        if rows_written % progress_every == 0 {
+        if rows_written.is_multiple_of(progress_every) {
             ctx.report_progress(
                 rows_written,
                 None,

@@ -1,0 +1,22 @@
+{
+  "[javascript]": {
+    "editor.codeActionsOnSave": {
+      "source.removeUnusedImports": "explicit"
+    }
+  },
+  "[javascriptreact]": {
+    "editor.codeActionsOnSave": {
+      "source.removeUnusedImports": "explicit"
+    }
+  },
+  "[typescript]": {
+    "editor.codeActionsOnSave": {
+      "source.removeUnusedImports": "explicit"
+    }
+  },
+  "[typescriptreact]": {
+    "editor.codeActionsOnSave": {
+      "source.removeUnusedImports": "explicit"
+    }
+  }
+}

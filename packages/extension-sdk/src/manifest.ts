@@ -3,7 +3,7 @@ import type {
   ExtensionContributions,
   ExtensionDevConfig,
   ExtensionManifest,
-} from "./generated/irodori-extension-api";
+} from "./generated/irodori-extension-api.js";
 
 export type ExtensionContributionsInput = Partial<ExtensionContributions>;
 export type ExtensionCapabilitiesInput = Partial<ExtensionCapabilities>;

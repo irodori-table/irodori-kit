@@ -112,12 +112,11 @@ fn column_inspection(
             fk.columns
                 .iter()
                 .zip(fk.references_columns.iter())
-                .filter_map(|(local, remote)| {
-                    (local == &column.name).then(|| ColumnReference {
-                        schema: fk.references_schema.clone(),
-                        object: fk.references_object.clone(),
-                        column: remote.clone(),
-                    })
+                .filter(|(local, _remote)| *local == &column.name)
+                .map(|(_local, remote)| ColumnReference {
+                    schema: fk.references_schema.clone(),
+                    object: fk.references_object.clone(),
+                    column: remote.clone(),
                 })
         })
         .collect();

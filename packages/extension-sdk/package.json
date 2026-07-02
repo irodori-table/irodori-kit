@@ -43,10 +43,12 @@
   "scripts": {
     "typegen": "node tools/typegen.mjs",
     "typegen:check": "node tools/typegen.mjs --check",
+    "fix:imports": "node tools/organize-imports.mjs",
+    "check:imports": "node tools/organize-imports.mjs --check",
     "validate": "node tools/validate-manifests.mjs",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "check": "npm run validate && npm run typecheck"
+    "check": "npm run validate && npm run typegen:check && npm run check:imports && npm run typecheck"
   },
   "devDependencies": {
     "typescript": "~5.8.3"

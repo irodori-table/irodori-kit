@@ -309,17 +309,13 @@ fn platform_get(service: &str, account: &str) -> Result<Option<String>> {
 
 #[cfg(target_os = "linux")]
 fn platform_delete(service: &str, account: &str) -> Result<()> {
-    let output = Command::new("secret-tool")
+    Command::new("secret-tool")
         .args(["clear", "service", service, "account", account])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .output()
         .map_err(os_keychain_unavailable)?;
-    if output.status.success() {
-        Ok(())
-    } else {
-        Ok(())
-    }
+    Ok(())
 }
 
 #[cfg(target_os = "windows")]

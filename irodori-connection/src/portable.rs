@@ -364,19 +364,16 @@ impl PortableSshProxyHop {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 #[ts(rename_all = "camelCase")]
 pub enum PortableSshAuthConfig {
+    #[default]
     Agent,
     PasswordRequired,
-    PrivateKeyRequired { passphrase_required: bool },
-}
-
-impl Default for PortableSshAuthConfig {
-    fn default() -> Self {
-        Self::Agent
-    }
+    PrivateKeyRequired {
+        passphrase_required: bool,
+    },
 }
 
 impl PortableSshAuthConfig {
@@ -418,20 +415,17 @@ impl PortableSshAuthConfig {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 #[ts(rename_all = "camelCase")]
 pub enum PortableAuthConfig {
+    #[default]
     None,
     SecretRequired,
     TokenRequired,
-    KeyPairRequired { passphrase_required: bool },
-}
-
-impl Default for PortableAuthConfig {
-    fn default() -> Self {
-        Self::None
-    }
+    KeyPairRequired {
+        passphrase_required: bool,
+    },
 }
 
 impl PortableAuthConfig {

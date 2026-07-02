@@ -426,10 +426,11 @@ impl SshProxyHop {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 #[ts(rename_all = "camelCase")]
 pub enum SshAuthConfig {
+    #[default]
     Agent,
     Password {
         password: SecretRef,
@@ -440,12 +441,6 @@ pub enum SshAuthConfig {
         #[ts(optional)]
         passphrase: Option<SecretRef>,
     },
-}
-
-impl Default for SshAuthConfig {
-    fn default() -> Self {
-        Self::Agent
-    }
 }
 
 impl SshAuthConfig {
@@ -467,10 +462,11 @@ impl SshAuthConfig {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 #[ts(rename_all = "camelCase")]
 pub enum AuthConfig {
+    #[default]
     None,
     Secret {
         secret: SecretRef,
@@ -484,12 +480,6 @@ pub enum AuthConfig {
         #[ts(optional)]
         passphrase: Option<SecretRef>,
     },
-}
-
-impl Default for AuthConfig {
-    fn default() -> Self {
-        Self::None
-    }
 }
 
 impl AuthConfig {

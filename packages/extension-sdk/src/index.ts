@@ -1,10 +1,17 @@
-export * from "./generated/irodori-extension-api";
-export { defineManifest } from "./manifest";
+export * from "./generated/irodori-extension-api.js";
 export {
+  formatPermissionWarnings,
+  inspectManifestPermissions,
+  isSensitivePermissionScope,
+  sensitivePermissionScopes,
+} from "./dev.js";
+export { defineManifest } from "./manifest.js";
+export {
+  createExtensionTestContext,
   createFakeDatabase,
   createResultGridSnapshot,
   formatResultGridAsMarkdown,
-} from "./testing";
+} from "./testing.js";
 
 import type {
   ConnectorContribution,
@@ -18,7 +25,7 @@ import type {
   SqlDialectDefinition,
   StatusBarItemContribution,
   ThemeDefinition,
-} from "./generated/irodori-extension-api";
+} from "./generated/irodori-extension-api.js";
 
 export type Awaitable<T> = T | Promise<T>;
 

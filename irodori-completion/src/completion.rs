@@ -760,12 +760,9 @@ mod tests {
         assert!(items
             .iter()
             .any(|item| item.kind == CompletionItemKind::View && item.label == "account_summary"));
-        assert!(
-            items
-                .iter()
-                .any(|item| item.kind == CompletionItemKind::Column && item.label == "email")
-                == false
-        );
+        assert!(!items
+            .iter()
+            .any(|item| item.kind == CompletionItemKind::Column && item.label == "email"));
     }
 
     #[test]
