@@ -1130,8 +1130,9 @@ mod typegen {
         let normalized = normalized_bindings(&rendered.contents);
 
         if std::env::var_os("CI").is_some() {
-            let committed =
-                fs::read_to_string(&path).expect("read generated extension SDK bindings");
+            let committed = normalized_bindings(
+                &fs::read_to_string(&path).expect("read generated extension SDK bindings"),
+            );
             assert!(
                 normalized == committed,
                 "stale bindings: {} differs after normalization — run `npm --prefix packages/extension-sdk run typegen` from irodori-kit and commit the result",
