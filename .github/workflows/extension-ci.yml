@@ -65,13 +65,13 @@ jobs:
         working-directory: .irodori-kit/packages/extension-sdk
 
       - name: Check Rust formatting
-        run: cargo fmt --all -- --check
+        run: make fmt
 
       - name: Run Clippy
-        run: cargo clippy --all-targets -- -D warnings
+        run: make lint
 
       - name: Run Rust tests
-        run: cargo test
+        run: make test
 
       - name: Build extension package
         run: ${{ inputs.package-command }}
