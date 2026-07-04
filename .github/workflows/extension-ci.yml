@@ -1,0 +1,98 @@
+name: Extension CI
+
+on:
+  workflow_call:
+    inputs:
+      manifest-root:
+        description: Relative path to the extension manifest root in the caller repository.
+        required: false
+        default: "."
+        type: string
+      package-command:
+        description: Command that builds the release archive under dist/.
+        required: false
+        default: "make package"
+        type: string
+      duckdb-backed:
+        description: Whether the connector links the DuckDB-backed driver path.
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  validate-package:
+    name: Validate and package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout extension repository
+        uses: actions/checkout@v7
+
+      - name: Checkout irodori-kit SDK
+        uses: actions/checkout@v7
+        with:
+          repository: hjosugi/irodori-kit
+          path: .irodori-kit
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: .irodori-kit/packages/extension-sdk/package-lock.json
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: extension-${{ runner.os }}-${{ github.repository }}-${{ inputs.duckdb-backed }}
+
+      - name: Install extension SDK dependencies
+        run: npm ci
+        working-directory: .irodori-kit/packages/extension-sdk
+
+      - name: Validate extension manifest
+        env:
+          IRODORI_EXTENSION_MANIFEST_ROOTS: ${{ github.workspace }}/${{ inputs.manifest-root }}
+        run: npm run validate
+        working-directory: .irodori-kit/packages/extension-sdk
+
+      - name: Check Rust formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run Clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Run Rust tests
+        run: cargo test
+
+      - name: Build extension package
+        run: ${{ inputs.package-command }}
+
+      - name: Verify extension package
+        shell: bash
+        run: |
+          shopt -s nullglob
+          packages=(dist/*.tar.gz)
+          if [[ ${#packages[@]} -ne 1 ]]; then
+            printf 'expected exactly one dist/*.tar.gz package, found %s\n' "${#packages[@]}" >&2
+            exit 1
+          fi
+          tar -tzf "${packages[0]}" | sort > /tmp/irodori-extension-package.txt
+          grep -qx 'connector.config.json' /tmp/irodori-extension-package.txt
+          grep -qx 'irodori.extension.json' /tmp/irodori-extension-package.txt
+          grep -q '^dist/native/' /tmp/irodori-extension-package.txt
+
+      - name: Upload extension package
+        uses: actions/upload-artifact@v5
+        with:
+          name: extension-package
+          path: dist/*.tar.gz
+          if-no-files-found: error
