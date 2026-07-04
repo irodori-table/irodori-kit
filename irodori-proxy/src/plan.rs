@@ -1,10 +1,10 @@
 use std::collections::BTreeMap;
 
-use irodori_core::{
-    DirectTransport, IrodoriError, IrodoriErrorKind, LocalFileTransport, ProxyChainHop,
-    ProxyChainTransport, ProxyHopConfig, ProxyTransport, Result, SshTunnelTransport,
-    TransportConfig,
+use irodori_connection::{
+    DirectTransport, LocalFileTransport, ProxyChainHop, ProxyChainTransport, ProxyHopConfig,
+    ProxyTransport, SshTunnelTransport, TransportConfig,
 };
+use irodori_error::{IrodoriError, IrodoriErrorKind, Result};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 

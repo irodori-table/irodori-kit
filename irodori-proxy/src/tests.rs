@@ -1,8 +1,9 @@
 use super::*;
-use irodori_core::{
-    IrodoriErrorKind, ProxyAuthConfig, ProxyHopConfig, ProxyTransport, SecretRef, SshAuthConfig,
-    SshProxyHop, SshTunnelTransport, TransportConfig,
+use irodori_connection::{
+    ProxyAuthConfig, ProxyHopConfig, ProxyTransport, SecretRef, SshAuthConfig, SshProxyHop,
+    SshTunnelTransport, TransportConfig,
 };
+use irodori_error::IrodoriErrorKind;
 use std::io::{Read, Write};
 use std::net::TcpListener;
 use std::time::Duration;

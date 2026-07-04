@@ -5,7 +5,8 @@ use std::collections::HashMap;
 use std::process::{Command, Stdio};
 use std::sync::Mutex;
 
-use irodori_core::{IrodoriError, Result, SecretRef};
+use irodori_connection::SecretRef;
+use irodori_error::{IrodoriError, IrodoriErrorKind, Result};
 
 pub const CRATE_NAME: &str = "irodori-secure-store";
 pub const DEFAULT_SERVICE: &str = "irodori-table";
@@ -93,10 +94,7 @@ impl SecureStore for MemorySecureStore {
         self.secrets
             .lock()
             .map_err(|_| {
-                IrodoriError::new(
-                    irodori_core::IrodoriErrorKind::Internal,
-                    "secret store lock poisoned",
-                )
+                IrodoriError::new(IrodoriErrorKind::Internal, "secret store lock poisoned")
             })?
             .insert(account_name(handle), value.as_str().to_string());
         Ok(())
@@ -108,10 +106,7 @@ impl SecureStore for MemorySecureStore {
             .secrets
             .lock()
             .map_err(|_| {
-                IrodoriError::new(
-                    irodori_core::IrodoriErrorKind::Internal,
-                    "secret store lock poisoned",
-                )
+                IrodoriError::new(IrodoriErrorKind::Internal, "secret store lock poisoned")
             })?
             .get(&account_name(handle))
             .cloned())
@@ -122,10 +117,7 @@ impl SecureStore for MemorySecureStore {
         self.secrets
             .lock()
             .map_err(|_| {
-                IrodoriError::new(
-                    irodori_core::IrodoriErrorKind::Internal,
-                    "secret store lock poisoned",
-                )
+                IrodoriError::new(IrodoriErrorKind::Internal, "secret store lock poisoned")
             })?
             .remove(&account_name(handle));
         Ok(())
@@ -364,7 +356,7 @@ fn platform_get(service: &str, account: &str) -> Result<Option<String>> {
     let ok = unsafe { CredReadW(target.as_ptr(), CRED_TYPE_GENERIC, 0, &mut credential) } != 0;
     if !ok {
         let error = std::io::Error::last_os_error();
-        if error.raw_os_error() == Some(1168) {
+        if windows_is_not_found(&error) {
             return Ok(None);
         }
         return Err(windows_credential_error_from("read secret", error));
@@ -375,16 +367,23 @@ fn platform_get(service: &str, account: &str) -> Result<Option<String>> {
 
     let result = unsafe {
         let credential_ref = &*credential;
-        let blob = std::slice::from_raw_parts(
-            credential_ref.CredentialBlob,
-            credential_ref.CredentialBlobSize as usize,
-        );
-        String::from_utf8(blob.to_vec()).map_err(|_| {
-            IrodoriError::new(
-                irodori_core::IrodoriErrorKind::Internal,
-                "Windows Credential Manager returned non-UTF-8 secret data",
-            )
-        })
+        let blob_size = credential_ref.CredentialBlobSize as usize;
+        if blob_size == 0 {
+            Ok(String::new())
+        } else if credential_ref.CredentialBlob.is_null() {
+            Err(IrodoriError::new(
+                IrodoriErrorKind::Internal,
+                "Windows Credential Manager returned a missing secret blob",
+            ))
+        } else {
+            let blob = std::slice::from_raw_parts(credential_ref.CredentialBlob, blob_size);
+            String::from_utf8(blob.to_vec()).map_err(|_| {
+                IrodoriError::new(
+                    IrodoriErrorKind::Internal,
+                    "Windows Credential Manager returned non-UTF-8 secret data",
+                )
+            })
+        }
     };
     unsafe {
         CredFree(credential.cast());
@@ -402,7 +401,7 @@ fn platform_delete(service: &str, account: &str) -> Result<()> {
         return Ok(());
     }
     let error = std::io::Error::last_os_error();
-    if error.raw_os_error() == Some(1168) {
+    if windows_is_not_found(&error) {
         Ok(())
     } else {
         Err(windows_credential_error_from("delete secret", error))
@@ -431,6 +430,13 @@ fn windows_credential_error_from(action: &str, error: std::io::Error) -> Irodori
     ))
 }
 
+#[cfg(target_os = "windows")]
+fn windows_is_not_found(error: &std::io::Error) -> bool {
+    use windows_sys::Win32::Foundation::ERROR_NOT_FOUND;
+
+    error.raw_os_error() == Some(ERROR_NOT_FOUND as i32)
+}
+
 #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
 fn platform_put(_service: &str, _account: &str, _value: &str) -> Result<()> {
     Err(unsupported_keychain())
@@ -449,7 +455,7 @@ fn platform_delete(_service: &str, _account: &str) -> Result<()> {
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 fn os_keychain_unavailable(error: std::io::Error) -> IrodoriError {
     IrodoriError::new(
-        irodori_core::IrodoriErrorKind::Unsupported,
+        IrodoriErrorKind::Unsupported,
         format!("OS keychain command is unavailable: {error}"),
     )
 }
@@ -466,7 +472,7 @@ fn command_ok(ok: bool, action: &str) -> Result<()> {
 #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
 fn unsupported_keychain() -> IrodoriError {
     IrodoriError::new(
-        irodori_core::IrodoriErrorKind::Unsupported,
+        IrodoriErrorKind::Unsupported,
         "OS keychain integration is not available on this platform yet",
     )
 }
@@ -511,7 +517,7 @@ mod tests {
     #[test]
     fn empty_secret_values_are_rejected() {
         let error = SecretValue::new("").unwrap_err();
-        assert_eq!(error.kind, irodori_core::IrodoriErrorKind::Validation);
+        assert_eq!(error.kind, IrodoriErrorKind::Validation);
     }
 
     #[test]
@@ -527,5 +533,48 @@ mod tests {
             windows_target_name(DEFAULT_SERVICE, "connections/prod/password"),
             "irodori-table/connections/prod/password"
         );
+    }
+
+    #[cfg(target_os = "windows")]
+    struct WindowsCredentialCleanup {
+        service: String,
+        account: String,
+    }
+
+    #[cfg(target_os = "windows")]
+    impl Drop for WindowsCredentialCleanup {
+        fn drop(&mut self) {
+            let _ = platform_delete(&self.service, &self.account);
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn windows_os_keychain_store_round_trips_and_deletes() {
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let service = format!("{DEFAULT_SERVICE}-test-{}-{unique}", std::process::id());
+        let account = format!("tests/windows-credential-manager/{unique}");
+        let store = OsKeychainStore::new(service.clone()).unwrap();
+        let handle = SecretRef {
+            handle: account.clone(),
+            service: None,
+        };
+        let _cleanup = WindowsCredentialCleanup { service, account };
+
+        store.delete(&handle).unwrap();
+        store
+            .put(&handle, SecretValue::new("windows-secret").unwrap())
+            .unwrap();
+        assert_eq!(
+            store.get(&handle).unwrap().as_deref(),
+            Some("windows-secret")
+        );
+        store.delete(&handle).unwrap();
+        assert_eq!(store.get(&handle).unwrap(), None);
     }
 }
