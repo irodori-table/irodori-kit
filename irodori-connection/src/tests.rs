@@ -81,6 +81,47 @@ fn connection_profile_serializes_with_camel_case_fields() {
 }
 
 #[test]
+fn desktop_connection_profile_keeps_app_compatible_shape() {
+    let profile = DesktopConnectionProfile {
+        id: "local-postgres".to_string(),
+        engine: "postgres".to_string(),
+        host: Some("127.0.0.1".to_string()),
+        port: Some(5432),
+        user: Some("irodori".to_string()),
+        password: None,
+        database: Some("samples".to_string()),
+        socket_path: Some("/var/run/postgresql".to_string()),
+        url: None,
+        transport: Some(TransportConfig::LocalFile(LocalFileTransport {
+            path: "/var/run/postgresql".to_string(),
+        })),
+        read_only: true,
+        options: BTreeMap::from([("applicationName".to_string(), "irodori".to_string())]),
+    };
+
+    assert_eq!(
+        serde_json::to_value(profile).unwrap(),
+        json!({
+            "id": "local-postgres",
+            "engine": "postgres",
+            "host": "127.0.0.1",
+            "port": 5432,
+            "user": "irodori",
+            "database": "samples",
+            "socketPath": "/var/run/postgresql",
+            "transport": {
+                "kind": "localFile",
+                "path": "/var/run/postgresql"
+            },
+            "readOnly": true,
+            "options": {
+                "applicationName": "irodori"
+            }
+        })
+    );
+}
+
+#[test]
 fn secret_material_is_not_part_of_the_profile_shape() {
     let mut profile = valid_profile();
     profile
