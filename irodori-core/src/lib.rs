@@ -1,11 +1,8 @@
 //! Core workspace, command, and shared domain types for Irodori Table.
 //!
-//! The error vocabulary now lives in `irodori-error` and the job/batch runtime
-//! in `irodori-jobs`; both are re-exported here so existing
+//! The error vocabulary and command envelope now live in `irodori-error`, and
+//! the job/batch runtime lives in `irodori-jobs`; they are re-exported here so existing
 //! `irodori_core::{IrodoriError, JobKind, ...}` paths keep working.
-
-use serde::{Deserialize, Serialize};
-use ts_rs::TS;
 
 pub use irodori_connection::{
     AuthConfig, ConnectionProfile, ConnectionProfileExport, DirectTransport, LocalFileTransport,
@@ -17,7 +14,7 @@ pub use irodori_connection::{
     SshAuthConfig, SshProxyHop, SshTunnelTransport, TransportConfig,
     CONNECTION_PROFILE_SCHEMA_VERSION,
 };
-pub use irodori_error::{IrodoriError, IrodoriErrorKind, Result};
+pub use irodori_error::{CommandResult, IrodoriError, IrodoriErrorKind, Result};
 pub use irodori_jobs::{
     run_job, BatchOutcome, BatchResult, JobArtifact, JobCheckpoint, JobConcurrencyPolicy,
     JobContext, JobKind, JobList, JobLogEntry, JobLogLevel, JobProgress, JobRecord,
@@ -29,37 +26,6 @@ pub use irodori_security::{
 };
 
 pub const CRATE_NAME: &str = "irodori-core";
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(rename_all = "camelCase")]
-pub struct CommandResult<T> {
-    pub ok: bool,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub data: Option<T>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub error: Option<IrodoriError>,
-}
-
-impl<T> CommandResult<T> {
-    pub fn success(data: T) -> Self {
-        Self {
-            ok: true,
-            data: Some(data),
-            error: None,
-        }
-    }
-
-    pub fn failure(error: IrodoriError) -> Self {
-        Self {
-            ok: false,
-            data: None,
-            error: Some(error),
-        }
-    }
-}
 
 #[cfg(test)]
 mod tests {
