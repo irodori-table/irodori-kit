@@ -594,7 +594,7 @@ checksum = "d98f6fed1fde3f8c21bc40a1abb88dd75e67924f9cffc3ef95607bad8017f8e2"
 
 [[package]]
 name = "irodori-completion"
-version = "0.6.5"
+version = "0.6.7"
 dependencies = [
  "irodori-sql",
  "serde",
@@ -603,7 +603,7 @@ dependencies = [
 
 [[package]]
 name = "irodori-connection"
-version = "0.6.5"
+version = "0.6.7"
 dependencies = [
  "irodori-error",
  "serde",
@@ -613,14 +613,14 @@ dependencies = [
 
 [[package]]
 name = "irodori-connector-abi"
-version = "0.6.5"
+version = "0.6.7"
 dependencies = [
  "serde_json",
 ]
 
 [[package]]
 name = "irodori-core"
-version = "0.6.5"
+version = "0.6.7"
 dependencies = [
  "irodori-connection",
  "irodori-error",
@@ -641,7 +641,7 @@ dependencies = [
 
 [[package]]
 name = "irodori-extension"
-version = "0.6.5"
+version = "0.6.7"
 dependencies = [
  "serde",
  "serde_json",
@@ -652,7 +652,7 @@ dependencies = [
 
 [[package]]
 name = "irodori-generate"
-version = "0.6.5"
+version = "0.6.7"
 dependencies = [
  "irodori-error",
  "irodori-sql",
@@ -673,7 +673,7 @@ dependencies = [
 
 [[package]]
 name = "irodori-proxy"
-version = "0.6.5"
+version = "0.6.7"
 dependencies = [
  "irodori-connection",
  "irodori-error",
@@ -688,7 +688,7 @@ dependencies = [
 
 [[package]]
 name = "irodori-secure-store"
-version = "0.6.5"
+version = "0.6.7"
 dependencies = [
  "irodori-connection",
  "irodori-error",
@@ -697,7 +697,7 @@ dependencies = [
 
 [[package]]
 name = "irodori-security"
-version = "0.6.5"
+version = "0.6.7"
 dependencies = [
  "serde",
  "ts-rs",
