@@ -1,5 +1,6 @@
 //! Deterministic completion, ranking, snippets, and signature-help primitives.
 
+pub mod api_metadata;
 pub mod completion;
 pub mod context;
 pub mod inspection;
