@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "private": true,
   "description": "TypeScript SDK, manifest schema, and templates for Irodori Table extensions.",
-  "license": "MIT OR 0BSD",
+  "license": "0BSD",
   "repository": {
     "type": "git",
     "url": "https://github.com/hjosugi/irodori-kit.git",

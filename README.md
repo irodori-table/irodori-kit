@@ -27,3 +27,7 @@ See `packages/extension-sdk/README.md` and
 `packages/extension-sdk/docs/building-connector-extension.md`.
 
 License: `MIT OR 0BSD`.
+
+## License
+
+0BSD. You can use, copy, modify, and distribute this project for almost any purpose.

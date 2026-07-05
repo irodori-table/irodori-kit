@@ -2,7 +2,7 @@
   "name": "irodori-typescript-basic-extension",
   "version": "0.1.0",
   "private": true,
-  "license": "MIT OR 0BSD",
+  "license": "0BSD",
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
