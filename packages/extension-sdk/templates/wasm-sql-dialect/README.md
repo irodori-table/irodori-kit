@@ -1,6 +1,6 @@
 # Wasm SQL Dialect Skeleton
 
-This template is dual-licensed as `MIT OR 0BSD`.
+This template is licensed as `0BSD`.
 
 It reserves the Rust/Wasm path for high-performance dialect work such as parsers,
 formatters, completion enrichers, and renderers. The host ABI is still marked

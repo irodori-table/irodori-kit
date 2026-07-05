@@ -6,7 +6,6 @@ license.workspace = true
 authors.workspace = true
 publish = false
 
-license = "0BSD"
 [lib]
 path = "src/lib.rs"
 

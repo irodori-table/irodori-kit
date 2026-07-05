@@ -70,4 +70,4 @@ entrypoints. The current public connector examples are the
 See [`docs/building-connector-extension.md`](docs/building-connector-extension.md)
 for the scaffold-to-validate flow.
 
-License: `MIT OR 0BSD`.
+License: `0BSD`.

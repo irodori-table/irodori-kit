@@ -1,6 +1,6 @@
 # TypeScript Basic Extension
 
-This template is dual-licensed as `MIT OR 0BSD`.
+This template is licensed as `0BSD`.
 
 It demonstrates:
 

@@ -6,7 +6,6 @@ license.workspace = true
 authors.workspace = true
 description = "Local, grammar-constrained SQL generation (schema projection, planning, validation) for Irodori Table."
 
-license = "0BSD"
 [dependencies]
 irodori-sql = { workspace = true }
 irodori-error = { workspace = true }

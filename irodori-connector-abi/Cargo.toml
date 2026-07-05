@@ -7,7 +7,6 @@ authors.workspace = true
 description = "Shared native connector ABI helpers and export macro for Irodori Table connector extensions."
 publish = false
 
-license = "0BSD"
 [lib]
 path = "src/lib.rs"
 

@@ -26,7 +26,7 @@ The extension SDK is currently consumed template-first from this repository.
 See `packages/extension-sdk/README.md` and
 `packages/extension-sdk/docs/building-connector-extension.md`.
 
-License: `MIT OR 0BSD`.
+License: `0BSD`.
 
 ## License
 
