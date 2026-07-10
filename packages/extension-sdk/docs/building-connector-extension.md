@@ -140,6 +140,27 @@ repository:
 Release archives must contain the manifest, connector config, and native module
 under the paths declared by the manifest and connector config.
 
+Official repositories use the reusable `extension-release.yml` workflow from
+the same pinned `irodori-kit` tag as their CI caller. A `v<manifest.version>`
+tag builds native archives on the six supported GitHub-hosted runner targets:
+
+- `x86_64-linux` and `aarch64-linux`
+- `x86_64-macos` and `aarch64-macos`
+- `x86_64-windows` and `aarch64-windows`
+
+The caller also accepts a manual `release_tag` input so existing immutable tags
+can be rebuilt to backfill missing platform archives without changing the
+extension version.
+
+Each archive name ends in `-<target>.tar.gz`; the release workflow publishes
+the archives to the immutable tag. Configure an `IRODORI_CATALOG_TOKEN`
+repository secret in each extension repository with permission to dispatch
+workflows in `hjosugi/irodori-table` (an organization-level secret can replace
+these if the repositories move into an organization). The release then triggers
+catalog synchronization, which records the tag, version, platform asset name,
+and GitHub-provided SHA-256 digest. A five-minute scheduled catalog sync is the
+fallback when dispatch is temporarily unavailable.
+
 ## Current Examples
 
 Use the public connector repos as examples until the SDK is published to npm:

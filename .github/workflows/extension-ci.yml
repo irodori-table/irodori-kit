@@ -3,6 +3,11 @@ name: Extension CI
 on:
   workflow_call:
     inputs:
+      checkout-ref:
+        description: Optional extension tag or commit to validate.
+        required: false
+        default: ""
+        type: string
       manifest-root:
         description: Relative path to the extension manifest root in the caller repository.
         required: false
@@ -30,11 +35,14 @@ jobs:
     steps:
       - name: Checkout extension repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.checkout-ref }}
 
       - name: Checkout irodori-kit SDK
         uses: actions/checkout@v7
         with:
           repository: hjosugi/irodori-kit
+          ref: v0.6.8
           path: .irodori-kit
 
       - name: Install Rust toolchain
