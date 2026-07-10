@@ -1,0 +1,163 @@
+name: Extension Release
+
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        description: Existing v* tag to build and publish; defaults to the triggering tag.
+        required: false
+        default: ""
+        type: string
+      duckdb_backed:
+        description: Whether the connector ships the DuckDB dynamic runtime.
+        required: false
+        default: false
+        type: boolean
+    secrets:
+      catalog_token:
+        description: Fine-grained token allowed to dispatch irodori-table catalog sync.
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    name: Validate release source
+    uses: hjosugi/irodori-kit/.github/workflows/extension-ci.yml@v0.6.8
+    with:
+      checkout-ref: ${{ inputs.release_tag || github.ref_name }}
+      manifest-root: "."
+      package-command: "make package"
+      duckdb-backed: ${{ inputs.duckdb_backed }}
+
+  build:
+    name: Build ${{ matrix.target }}
+    needs: validate
+    env:
+      CARGO_TARGET_DIR: ${{ github.workspace }}/.irodori-target
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            target: x86_64-linux
+            rustflags: -C link-arg=-Wl,-rpath,$ORIGIN
+          - runner: ubuntu-24.04-arm
+            target: aarch64-linux
+            rustflags: -C link-arg=-Wl,-rpath,$ORIGIN
+          - runner: macos-15-intel
+            target: x86_64-macos
+            rustflags: -C link-arg=-Wl,-rpath,@loader_path
+          - runner: macos-15
+            target: aarch64-macos
+            rustflags: -C link-arg=-Wl,-rpath,@loader_path
+          - runner: windows-2025
+            target: x86_64-windows
+            rustflags: ""
+          - runner: windows-11-arm
+            target: aarch64-windows
+            rustflags: ""
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout extension repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.release_tag || github.ref_name }}
+
+      - name: Checkout release tooling
+        uses: actions/checkout@v7
+        with:
+          repository: hjosugi/irodori-kit
+          ref: v0.6.8
+          path: .irodori-kit
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Build native extension
+        shell: bash
+        env:
+          DUCKDB_DOWNLOAD_LIB: ${{ inputs.duckdb_backed && '1' || '' }}
+          RUSTFLAGS: ${{ matrix.rustflags }}
+        run: cargo build --release --locked
+
+      - name: Package target archive
+        shell: bash
+        run: |
+          args=()
+          if [[ "${{ inputs.duckdb_backed }}" == "true" ]]; then
+            args+=(--include-library duckdb)
+          fi
+          node .irodori-kit/packages/extension-sdk/tools/package-native-extension.mjs "${args[@]}"
+
+      - name: Verify archive contents
+        shell: bash
+        run: |
+          archive="dist/${GITHUB_REPOSITORY#*/}-${{ matrix.target }}.tar.gz"
+          test -f "${archive}"
+          tar -tzf "${archive}" | sort > "${RUNNER_TEMP}/archive.txt"
+          grep -qx 'connector.config.json' "${RUNNER_TEMP}/archive.txt"
+          grep -qx 'irodori.extension.json' "${RUNNER_TEMP}/archive.txt"
+          grep -Eq '^dist/native/.+\.(so|dll|dylib)$' "${RUNNER_TEMP}/archive.txt"
+
+      - name: Upload target archive
+        uses: actions/upload-artifact@v5
+        with:
+          name: extension-${{ matrix.target }}
+          path: dist/*-${{ matrix.target }}.tar.gz
+          if-no-files-found: error
+
+  publish:
+    name: Publish immutable release
+    needs: build
+    runs-on: ubuntu-24.04
+    env:
+      CATALOG_TOKEN: ${{ secrets.catalog_token }}
+      RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+    steps:
+      - name: Checkout extension repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.release_tag || github.ref_name }}
+
+      - name: Download target archives
+        uses: actions/download-artifact@v6
+        with:
+          pattern: extension-*
+          path: dist
+          merge-multiple: true
+
+      - name: Verify tag matches manifest version
+        shell: bash
+        run: |
+          version=$(jq -r .version irodori.extension.json)
+          test "${RELEASE_TAG}" = "v${version}"
+
+      - name: Create or update GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
+            gh release create "${RELEASE_TAG}" --verify-tag --generate-notes --title "${GITHUB_REPOSITORY#*/} ${RELEASE_TAG}"
+          fi
+          gh release upload "${RELEASE_TAG}" dist/*.tar.gz --clobber
+
+      - name: Dispatch extension catalog sync
+        if: ${{ env.CATALOG_TOKEN != '' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ env.CATALOG_TOKEN }}
+        run: |
+          gh api --method POST repos/hjosugi/irodori-table/dispatches \
+            -f event_type=extension-released \
+            -f 'client_payload[repository]=${{ github.repository }}' \
+            -f "client_payload[tag]=${RELEASE_TAG}"
