@@ -1,3 +1,6 @@
+<!-- i18n: language-switcher -->
+[English](README.md) | [日本語](README.ja.md)
+
 # Irodori Extension SDK
 
 TypeScript SDK, manifest schema, and starter templates for Irodori Table

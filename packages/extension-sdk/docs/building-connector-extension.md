@@ -1,3 +1,6 @@
+<!-- i18n: language-switcher -->
+[English](building-connector-extension.md) | [日本語](building-connector-extension.ja.md)
+
 # Building A Connector Extension
 
 This is the public, supported flow for building an Irodori native connector
