@@ -20,6 +20,7 @@ const releaseDir = resolve(targetDir, "release");
 const nativeDir = resolve(root, "dist/native");
 const archiveName = `${basename(root)}-${targetLabel}.tar.gz`;
 const archivePath = resolve(root, "dist", archiveName);
+const archiveRelativePath = `dist/${archiveName}`;
 
 rmSync(nativeDir, { force: true, recursive: true });
 mkdirSync(nativeDir, { recursive: true });
@@ -44,7 +45,7 @@ for (const entry of archiveEntries) {
     throw new Error(`required package entry is missing: ${entry}`);
   }
 }
-run("tar", ["-czf", archivePath, ...archiveEntries], root);
+run("tar", ["-czf", archiveRelativePath, ...archiveEntries], root);
 
 console.log(
   JSON.stringify(

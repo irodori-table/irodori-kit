@@ -24,7 +24,7 @@ permissions:
 jobs:
   validate:
     name: Validate release source
-    uses: hjosugi/irodori-kit/.github/workflows/extension-ci.yml@v0.6.8
+    uses: hjosugi/irodori-kit/.github/workflows/extension-ci.yml@v0.6.9
     with:
       checkout-ref: ${{ inputs.release_tag || github.ref_name }}
       manifest-root: "."
@@ -69,7 +69,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: hjosugi/irodori-kit
-          ref: v0.6.8
+          ref: v0.6.9
           path: .irodori-kit
 
       - name: Install Rust toolchain

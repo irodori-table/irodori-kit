@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: hjosugi/irodori-kit
-          ref: v0.6.8
+          ref: v0.6.9
           path: .irodori-kit
 
       - name: Install Rust toolchain
