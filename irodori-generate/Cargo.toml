@@ -16,7 +16,27 @@ llama-cpp-2 = { version = "=0.1.150", optional = true }
 # HTTP providers (Ollama / OpenAI-compatible APIs). Blocking client fits the
 # synchronous GrammarModel; behind the `http` feature so the base crate stays
 # dependency-light.
-reqwest = { version = "0.13.4", features = ["blocking", "json"], optional = true }
+# default-features would pull aws-lc-rs, a second C crypto stack compiled
+# alongside the ring that tauri-plugin-updater already requires downstream.
+# charset/http2/system-proxy are reqwest defaults and are re-listed on purpose:
+# dropping system-proxy silently breaks users behind a corporate proxy.
+reqwest = { version = "0.13.4", default-features = false, features = [
+    "blocking",
+    "json",
+    "rustls-no-provider",
+    "charset",
+    "http2",
+    "system-proxy",
+], optional = true }
+# With no default provider compiled in, reqwest's default_rustls_crypto_provider()
+# is a literal panic!, so the provider has to be named here and installed at
+# runtime by http::client().
+rustls = { version = "0.23", default-features = false, features = [
+    "ring",
+    "std",
+    "tls12",
+    "logging",
+], optional = true }
 serde_json = { version = "1", optional = true }
 
 [features]
@@ -24,6 +44,6 @@ default = []
 # Embedded local model (grammar-constrained).
 llama = ["dep:llama-cpp-2"]
 # Ollama + OpenAI-compatible HTTP providers.
-http = ["dep:reqwest", "dep:serde_json"]
+http = ["dep:reqwest", "dep:serde_json", "dep:rustls"]
 # The CLI/command provider (Claude Code, Codex, Copilot, any tool) is std-only
 # and always available — no feature needed.
