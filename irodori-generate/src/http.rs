@@ -50,7 +50,23 @@ impl HttpConfig {
     }
 }
 
+/// Install the TLS backend exactly once per process.
+///
+/// reqwest is built without a default crypto provider so it does not drag in a
+/// second C crypto stack, which means `default_rustls_crypto_provider()` is a
+/// `panic!` until something installs one. Doing it here keeps this crate usable
+/// standalone; an embedding binary may also install its own, and whichever runs
+/// first wins — `install_default` returning `Err` just means someone beat us to
+/// it, which is fine.
+fn ensure_crypto_provider() {
+    static PROVIDER: std::sync::Once = std::sync::Once::new();
+    PROVIDER.call_once(|| {
+        let _ = rustls::crypto::ring::default_provider().install_default();
+    });
+}
+
 fn client(timeout_secs: u64) -> Result<reqwest::blocking::Client> {
+    ensure_crypto_provider();
     reqwest::blocking::Client::builder()
         .timeout(Duration::from_secs(timeout_secs.max(1)))
         .build()
@@ -351,4 +367,27 @@ fn token_count(value: &serde_json::Value, key: &str) -> u32 {
 
 fn internal(message: impl Into<String>) -> IrodoriError {
     IrodoriError::new(IrodoriErrorKind::Internal, message)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// reqwest is compiled without a default crypto provider, which makes its
+    /// `default_rustls_crypto_provider()` a `panic!`. `client()` installs one
+    /// first; if that call is ever dropped, this test panics rather than
+    /// letting every HTTPS request in an embedding application die at runtime.
+    #[test]
+    fn client_builds_without_a_default_crypto_provider_panic() {
+        assert!(client(30).is_ok());
+    }
+
+    /// The provider install must tolerate running twice, both because
+    /// `client()` is called per request and because an embedding binary may
+    /// have installed its own provider before we get here.
+    #[test]
+    fn repeated_client_construction_is_safe() {
+        assert!(client(1).is_ok());
+        assert!(client(1).is_ok());
+    }
 }
