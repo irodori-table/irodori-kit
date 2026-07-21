@@ -2,13 +2,15 @@
 
 export type JsonValue = unknown;
 
-export type ExtensionRuntime = "typescript" | "javascript" | "wasm" | "native";
+export type ExtensionRuntime = "declarative" | "typescript" | "javascript" | "wasm" | "native";
 
-export type PermissionScope = "commands" | "keybindings" | "workspace:read" | "connections:read" | "connections:write" | "connectors" | "queries:run" | "queryResults:read" | "queryResults:write" | "metadata:read" | "files:read" | "files:write" | "themes" | "sqlDialects" | "statusBar" | "resultRenderers" | "logs" | "dev:fixtures" | "native" | "wasm";
+export type PermissionScope = "hostFeatures" | "commands" | "keybindings" | "workspace:read" | "connections:read" | "connections:write" | "connectors" | "queries:run" | "queryResults:read" | "queryResults:write" | "metadata:read" | "files:read" | "files:write" | "themes" | "sqlDialects" | "statusBar" | "resultRenderers" | "logs" | "dev:fixtures" | "native" | "wasm";
 
 export type ExtensionManifest = { manifestVersion: number, id: string, name: string, version: string, publisher?: string, description?: string, license: string, repository?: string, apiVersion: string, runtime: ExtensionRuntime, entry: string, permissions: Array<PermissionScope>, contributes: ExtensionContributions, capabilities: ExtensionCapabilities, dev?: ExtensionDevConfig, };
 
-export type ExtensionContributions = { commands: Array<CommandContribution>, keybindings: Array<KeybindingContribution>, resultGridActions: Array<ResultGridActionContribution>, resultGridRenderers: Array<ResultGridRendererContribution>, statusBarItems: Array<StatusBarItemContribution>, themes: Array<ThemeContribution>, sqlDialects: Array<SqlDialectContribution>, connectors: Array<ConnectorContribution>, };
+export type ExtensionContributions = { hostFeatures: Array<HostFeature>, commands: Array<CommandContribution>, keybindings: Array<KeybindingContribution>, resultGridActions: Array<ResultGridActionContribution>, resultGridRenderers: Array<ResultGridRendererContribution>, statusBarItems: Array<StatusBarItemContribution>, themes: Array<ThemeContribution>, sqlDialects: Array<SqlDialectContribution>, connectors: Array<ConnectorContribution>, };
+
+export type HostFeature = "knowledge" | "datalake";
 
 export type ExtensionCapabilities = { wasmModules: Array<WasmModuleContribution>, nativeModules: Array<NativeModuleContribution>, };
 
