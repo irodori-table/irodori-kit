@@ -8,7 +8,8 @@ Shared foundation for Irodori Table.
   secure storage, extensions, and the headless server.
 - `irodori-connector-abi`, the shared native connector ABI helpers and export
   macro used by installable connector extensions.
-- `packages/extension-sdk`, the TypeScript SDK and templates for extensions.
+- `packages/extension-sdk`, the TypeScript SDK, manifest schema, and contracts
+  for native connectors and declarative host-feature extensions.
 - `packaging/`, shared release and package-manager templates for Irodori
   products.
 

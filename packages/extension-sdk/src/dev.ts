@@ -23,6 +23,7 @@ export interface ExtensionDevHost {
 }
 
 export const sensitivePermissionScopes: readonly PermissionScope[] = [
+  "hostFeatures",
   "connections:write",
   "connectors",
   "queries:run",
@@ -46,6 +47,11 @@ interface PermissionRequirementRule<TKey extends string> {
 }
 
 const contributionPermissionRules: readonly PermissionRequirementRule<ContributionKey>[] = [
+  {
+    key: "hostFeatures",
+    permission: "hostFeatures",
+    message: "contributes.hostFeatures requires permissions: hostFeatures",
+  },
   {
     key: "commands",
     permission: "commands",

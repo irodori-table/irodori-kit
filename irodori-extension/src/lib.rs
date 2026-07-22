@@ -16,6 +16,9 @@ pub const CURRENT_API_VERSION: &str = "0.1";
 #[serde(rename_all = "camelCase")]
 #[ts(rename_all = "camelCase")]
 pub enum ExtensionRuntime {
+    #[serde(rename = "declarative")]
+    #[ts(rename = "declarative")]
+    Declarative,
     #[serde(rename = "typescript")]
     #[ts(rename = "typescript")]
     TypeScript,
@@ -34,6 +37,9 @@ pub enum ExtensionRuntime {
 #[serde(rename_all = "camelCase")]
 #[ts(rename_all = "camelCase")]
 pub enum PermissionScope {
+    #[serde(rename = "hostFeatures")]
+    #[ts(rename = "hostFeatures")]
+    HostFeatures,
     #[serde(rename = "commands")]
     #[ts(rename = "commands")]
     Commands,
@@ -133,6 +139,8 @@ pub struct ExtensionManifest {
 #[ts(rename_all = "camelCase")]
 pub struct ExtensionContributions {
     #[serde(default)]
+    pub host_features: Vec<HostFeature>,
+    #[serde(default)]
     pub commands: Vec<CommandContribution>,
     #[serde(default)]
     pub keybindings: Vec<KeybindingContribution>,
@@ -148,6 +156,17 @@ pub struct ExtensionContributions {
     pub sql_dialects: Vec<SqlDialectContribution>,
     #[serde(default)]
     pub connectors: Vec<ConnectorContribution>,
+}
+
+/// A feature implemented by the trusted desktop host and activated by an
+/// installed declarative extension. Declarative extensions never execute
+/// downloaded code in the application webview.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(rename_all = "camelCase")]
+pub enum HostFeature {
+    Knowledge,
+    Datalake,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -986,6 +1005,7 @@ mod tests {
                 "entry": "dist/main.js",
                 "permissions": ["commands", "queryResults:read"],
                 "contributes": {
+                    "hostFeatures": [],
                     "commands": [{
                         "id": "quickExport.copyAsMarkdown",
                         "title": "Copy Result as Markdown Table",
@@ -1024,6 +1044,22 @@ mod tests {
             })
         );
     }
+
+    #[test]
+    fn declarative_host_feature_contract_serializes() {
+        assert_eq!(
+            serde_json::to_value(ExtensionRuntime::Declarative).unwrap(),
+            json!("declarative")
+        );
+        assert_eq!(
+            serde_json::to_value(PermissionScope::HostFeatures).unwrap(),
+            json!("hostFeatures")
+        );
+        assert_eq!(
+            serde_json::to_value(HostFeature::Datalake).unwrap(),
+            json!("datalake")
+        );
+    }
 }
 
 #[cfg(test)]
@@ -1056,6 +1092,7 @@ mod typegen {
             .decl(&decl::<PermissionScope>())
             .decl(&decl::<ExtensionManifest>())
             .decl(&decl::<ExtensionContributions>())
+            .decl(&decl::<HostFeature>())
             .decl(&decl::<ExtensionCapabilities>())
             .decl(&decl::<CommandContribution>())
             .decl(&decl::<KeybindingContribution>())

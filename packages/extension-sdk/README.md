@@ -11,6 +11,8 @@ The SDK is currently **template-first**:
   extensions;
 - start from `templates/typescript-basic` for TypeScript extensions;
 - start from `templates/wasm-sql-dialect` for Rust/Wasm dialect experiments;
+- use the `declarative` runtime and `hostFeatures` permission for a trusted
+  desktop feature package;
 - for native connector extensions, follow
   [`docs/building-connector-extension.md`](docs/building-connector-extension.md)
   and the public `irodori-extension-*` connector repositories.
@@ -69,5 +71,25 @@ entrypoints. The current public connector examples are the
 
 See [`docs/building-connector-extension.md`](docs/building-connector-extension.md)
 for the scaffold-to-validate flow.
+
+## Declarative Feature Extensions
+
+Declarative extensions contribute exactly one host feature and do not execute
+downloaded code in the application webview. The current trusted feature IDs are
+`knowledge` and `datalake`:
+
+```json
+{
+  "runtime": "declarative",
+  "entry": "feature.json",
+  "permissions": ["hostFeatures"],
+  "contributes": { "hostFeatures": ["knowledge"] }
+}
+```
+
+Public examples:
+
+- <https://github.com/hjosugi/irodori-extension-knowledge>
+- <https://github.com/hjosugi/irodori-extension-datalake>
 
 License: `0BSD`.
