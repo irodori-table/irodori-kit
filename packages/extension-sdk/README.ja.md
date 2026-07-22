@@ -12,6 +12,8 @@ SDKは現在**テンプレートファースト**です：
 - 公式または初期のサードパーティ拡張機能を構築する際は、このリポジトリをクローンまたはベンダーしてください；
 - TypeScript拡張機能は`templates/typescript-basic`から開始してください；
 - Rust/Wasm方言の実験は`templates/wasm-sql-dialect`から開始してください；
+- 信頼済みdesktop feature packageには`declarative` runtimeと
+  `hostFeatures` permissionを使用してください；
 - ネイティブコネクタ拡張機能の場合は、[`docs/building-connector-extension.md`](docs/building-connector-extension.md)および公開されている`irodori-extension-*`コネクタリポジトリに従ってください。
 
 npmパッケージ名は`@irodori-table/extension-sdk`として予約されていますが、APIが安定した公開準備が整うまではプライベートのままです。それまでは、ローカルテンプレートは`file:../..`でSDKに依存しています。
@@ -62,5 +64,25 @@ npm run typegen:check
 - <https://github.com/hjosugi/irodori-extension-memgraph>
 
 スキャフォールドから検証までの流れは[`docs/building-connector-extension.md`](docs/building-connector-extension.md)を参照してください。
+
+## Declarative feature extension
+
+Declarative extensionはhost featureを1つだけ提供し、application webview内で
+downloadしたcodeを実行しません。現在の信頼済みfeature IDは`knowledge`と
+`datalake`です：
+
+```json
+{
+  "runtime": "declarative",
+  "entry": "feature.json",
+  "permissions": ["hostFeatures"],
+  "contributes": { "hostFeatures": ["knowledge"] }
+}
+```
+
+公開例：
+
+- <https://github.com/hjosugi/irodori-extension-knowledge>
+- <https://github.com/hjosugi/irodori-extension-datalake>
 
 ライセンス：`0BSD`。

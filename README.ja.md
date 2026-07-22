@@ -9,7 +9,8 @@ Irodori Tableの共有基盤。
 
 - 接続、セキュリティ、補完、生成、IO、プロキシ、セキュアストレージ、拡張機能、ヘッドレスサーバーのためのRustクレート。
 - `irodori-connector-abi`、インストール可能なコネクター拡張機能で使用される共有ネイティブコネクターABIヘルパーとエクスポートマクロ。
-- `packages/extension-sdk`、拡張機能用のTypeScript SDKとテンプレート。
+- `packages/extension-sdk`、TypeScript SDK、manifest schema、native connectorと
+  declarative host-feature extensionの契約。
 - `packaging/`、Irodori製品向けの共有リリースおよびパッケージマネージャーテンプレート。
 
 `irodori-table`はこのリポジトリをGitタグで利用します。
