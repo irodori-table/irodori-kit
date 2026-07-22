@@ -1,3 +1,6 @@
+<!-- i18n: language-switcher -->
+[English](README.md) | [日本語](README.ja.md)
+
 # TypeScript Basic Extension
 
 This template is licensed as `0BSD`.

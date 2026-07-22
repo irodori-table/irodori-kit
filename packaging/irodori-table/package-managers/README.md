@@ -1,3 +1,6 @@
+<!-- i18n: language-switcher -->
+[English](README.md) | [日本語](README.ja.md)
+
 # Irodori Table Package Manager Templates
 
 Submission templates for Irodori Table package managers.

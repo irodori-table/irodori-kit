@@ -1,3 +1,6 @@
+<!-- i18n: language-switcher -->
+[English](README.md) | [日本語](README.ja.md)
+
 # winget Template
 
 Replace placeholders in these files after the Windows installer URL, sha256,
