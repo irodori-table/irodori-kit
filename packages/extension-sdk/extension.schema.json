@@ -83,11 +83,12 @@
   "$defs": {
     "runtime": {
       "type": "string",
-      "enum": ["typescript", "javascript", "wasm", "native"]
+      "enum": ["declarative", "typescript", "javascript", "wasm", "native"]
     },
     "permission": {
       "type": "string",
       "enum": [
+        "hostFeatures",
         "commands",
         "keybindings",
         "workspace:read",
@@ -114,6 +115,13 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "hostFeatures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/hostFeature"
+          },
+          "uniqueItems": true
+        },
         "commands": {
           "type": "array",
           "items": {
@@ -163,6 +171,10 @@
           }
         }
       }
+    },
+    "hostFeature": {
+      "type": "string",
+      "enum": ["knowledge", "datalake"]
     },
     "command": {
       "type": "object",

@@ -14,6 +14,7 @@ const nativePlatforms = new Set(defs.nativeModule?.properties?.platforms?.items?
 const topLevelKeys = new Set(Object.keys(schema.properties ?? {}));
 const requiredTopLevelKeys = schema.required ?? [];
 const contributionShapes = {
+  hostFeatures: defs.hostFeature,
   commands: defs.command,
   keybindings: defs.keybinding,
   resultGridActions: defs.resultGridAction,
@@ -28,6 +29,7 @@ const capabilityShapes = {
   nativeModules: defs.nativeModule,
 };
 const contributionPermissionRules = [
+  ["hostFeatures", "hostFeatures"],
   ["commands", "commands"],
   ["keybindings", "keybindings"],
   ["resultGridActions", "resultRenderers"],
@@ -130,6 +132,10 @@ function validateContributes(manifestPath, contributes, permissions, label) {
 }
 
 function validateContributionItem(manifestPath, item, shape, label) {
+  if (shape?.type !== "object") {
+    validateProperty(item, shape ?? {}, label);
+    return;
+  }
   requireObject(item, label);
   rejectUnknownKeys(item, new Set(Object.keys(shape.properties ?? {})), label);
   requireKeys(item, shape.required ?? [], label);
