@@ -13,13 +13,13 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.7.2"
+version = "0.7.3"
 edition = "2021"
 license = "0BSD"
 authors = ["Irodori Table contributors"]
 
 [workspace.dependencies]
 irodori-sql = { git = "https://github.com/hjosugi/irodori-sql", tag = "v0.3.0" }
-irodori-error = { git = "https://github.com/hjosugi/irodori-knowledge", tag = "v0.3.1" }
-irodori-jobs = { git = "https://github.com/hjosugi/irodori-knowledge", tag = "v0.3.1" }
-irodori-knowledge = { git = "https://github.com/hjosugi/irodori-knowledge", tag = "v0.3.1" }
+irodori-error = { git = "https://github.com/hjosugi/irodori-knowledge", tag = "v0.3.2" }
+irodori-jobs = { git = "https://github.com/hjosugi/irodori-knowledge", tag = "v0.3.2" }
+irodori-knowledge = { git = "https://github.com/hjosugi/irodori-knowledge", tag = "v0.3.2" }
