@@ -89,6 +89,15 @@ jobs:
         working-directory: packages/extension-sdk
         run: npm run validate
 
+      - name: Check reusable workflow version pins
+        shell: bash
+        run: |
+          version=$(sed -n '/^\[workspace.package\]/,/^\[/s/^version = "\([^"]*\)"/\1/p' Cargo.toml)
+          test -n "$version"
+          grep -Fq "hjosugi/irodori-kit/.github/workflows/extension-ci.yml@v${version}" .github/workflows/extension-release.yml
+          grep -Fq "ref: v${version}" .github/workflows/extension-ci.yml
+          grep -Fq "ref: v${version}" .github/workflows/extension-release.yml
+
       - name: Check generated SDK API
         working-directory: packages/extension-sdk
         run: npm run typegen:check
