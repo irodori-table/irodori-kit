@@ -41,7 +41,7 @@ jobs:
       - name: Checkout irodori-kit SDK
         uses: actions/checkout@v7
         with:
-          repository: hjosugi/irodori-kit
+          repository: irodori-table/irodori-kit
           ref: v0.7.5
           path: .irodori-kit
 
