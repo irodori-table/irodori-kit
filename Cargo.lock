@@ -589,7 +589,7 @@ dependencies = [
 [[package]]
 name = "irodori-error"
 version = "0.3.2"
-source = "git+https://github.com/irodori-table/irodori-knowledge?tag=v0.3.2#cf4c30cb1e8b137fd49ca2e7fb6d1c8ba4e31bf1"
+source = "git+https://github.com/hjosugi/irodori-knowledge?tag=v0.3.2#cf4c30cb1e8b137fd49ca2e7fb6d1c8ba4e31bf1"
 dependencies = [
  "serde",
  "ts-rs",
@@ -621,7 +621,7 @@ dependencies = [
 [[package]]
 name = "irodori-jobs"
 version = "0.3.2"
-source = "git+https://github.com/irodori-table/irodori-knowledge?tag=v0.3.2#cf4c30cb1e8b137fd49ca2e7fb6d1c8ba4e31bf1"
+source = "git+https://github.com/hjosugi/irodori-knowledge?tag=v0.3.2#cf4c30cb1e8b137fd49ca2e7fb6d1c8ba4e31bf1"
 dependencies = [
  "irodori-error",
  "serde",
@@ -663,7 +663,7 @@ dependencies = [
 [[package]]
 name = "irodori-sql"
 version = "0.3.0"
-source = "git+https://github.com/irodori-table/irodori-sql?tag=v0.3.0#548197a3bcef4f5a2550359cf2287701f1e95bfe"
+source = "git+https://github.com/hjosugi/irodori-sql?tag=v0.3.0#548197a3bcef4f5a2550359cf2287701f1e95bfe"
 dependencies = [
  "thiserror",
  "tracing",
