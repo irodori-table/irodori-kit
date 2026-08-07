@@ -31,5 +31,5 @@ apps:
 parts:
   irodori-table:
     plugin: dump
-    source: https://github.com/hjosugi/irodori-table/releases/download/v__VERSION__/__SNAP_SOURCE_ASSET__
+    source: https://github.com/irodori-table/irodori-table/releases/download/v__VERSION__/__SNAP_SOURCE_ASSET__
     source-checksum: sha256/__SHA256_SNAP_SOURCE__

@@ -6,7 +6,7 @@
   "license": "0BSD",
   "repository": {
     "type": "git",
-    "url": "https://github.com/hjosugi/irodori-kit.git",
+    "url": "https://github.com/irodori-table/irodori-kit.git",
     "directory": "packages/extension-sdk"
   },
   "bin": {

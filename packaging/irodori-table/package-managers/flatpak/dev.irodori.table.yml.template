@@ -21,5 +21,5 @@ modules:
       - install -Dm644 __ICON_FILE__ /app/share/icons/hicolor/512x512/apps/dev.irodori.table.png
     sources:
       - type: archive
-        url: https://github.com/hjosugi/irodori-table/releases/download/v__VERSION__/__FLATPAK_SOURCE_ASSET__
+        url: https://github.com/irodori-table/irodori-table/releases/download/v__VERSION__/__FLATPAK_SOURCE_ASSET__
         sha256: __SHA256_FLATPAK_SOURCE__

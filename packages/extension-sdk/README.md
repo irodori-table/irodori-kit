@@ -69,8 +69,8 @@ development, and use the Rust `irodori-connector-abi` crate for the native ABI
 entrypoints. The current public connector examples are the
 `hjosugi/irodori-extension-*` repositories, such as:
 
-- <https://github.com/hjosugi/irodori-extension-duckdb>
-- <https://github.com/hjosugi/irodori-extension-memgraph>
+- <https://github.com/irodori-table/irodori-extension-duckdb>
+- <https://github.com/irodori-table/irodori-extension-memgraph>
 
 See [`docs/building-connector-extension.md`](docs/building-connector-extension.md)
 for the scaffold-to-validate flow.
@@ -92,7 +92,7 @@ downloaded code in the application webview. The current trusted feature IDs are
 
 Public examples:
 
-- <https://github.com/hjosugi/irodori-extension-knowledge>
-- <https://github.com/hjosugi/irodori-extension-datalake>
+- <https://github.com/irodori-table/irodori-extension-knowledge>
+- <https://github.com/irodori-table/irodori-extension-datalake>
 
 License: `0BSD`.

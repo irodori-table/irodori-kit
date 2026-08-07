@@ -60,8 +60,8 @@ npm run typegen:check
 
 ネイティブコネクタ拡張機能は、マニフェスト検証とローカル開発にこのパッケージを使用し、ネイティブABIエントリポイントにはRustの`irodori-connector-abi`クレートを使用します。現在の公開コネクタ例は`hjosugi/irodori-extension-*`リポジトリ群で、例えば：
 
-- <https://github.com/hjosugi/irodori-extension-duckdb>
-- <https://github.com/hjosugi/irodori-extension-memgraph>
+- <https://github.com/irodori-table/irodori-extension-duckdb>
+- <https://github.com/irodori-table/irodori-extension-memgraph>
 
 スキャフォールドから検証までの流れは[`docs/building-connector-extension.md`](docs/building-connector-extension.md)を参照してください。
 
@@ -82,7 +82,7 @@ downloadしたcodeを実行しません。現在の信頼済みfeature IDは`kno
 
 公開例：
 
-- <https://github.com/hjosugi/irodori-extension-knowledge>
-- <https://github.com/hjosugi/irodori-extension-datalake>
+- <https://github.com/irodori-table/irodori-extension-knowledge>
+- <https://github.com/irodori-table/irodori-extension-datalake>
 
 ライセンス：`0BSD`。

@@ -48,7 +48,7 @@ IRODORI_EXTENSIONS_ROOT=../irodori-extensions \
 
 ```toml
 [dependencies]
-irodori-connector-abi = { git = "https://github.com/hjosugi/irodori-kit", tag = "v0.6.0" }
+irodori-connector-abi = { git = "https://github.com/irodori-table/irodori-kit", tag = "v0.6.0" }
 serde_json = "1"
 ```
 
@@ -111,7 +111,7 @@ cargo test
 
 ```toml
 # irodori-extensions/.cargo/config.toml
-[patch."https://github.com/hjosugi/irodori-kit"]
+[patch."https://github.com/irodori-table/irodori-kit"]
 irodori-connector-abi = { path = "../irodori-kit/irodori-connector-abi" }
 ```
 
@@ -137,12 +137,12 @@ irodori-connector-abi = { path = "../irodori-kit/irodori-connector-abi" }
 
 呼び出し元は手動の`release_tag`入力も受け付け、既存の不変タグを再ビルドしてプラットフォームアーカイブの欠落を補填できます（拡張バージョンは変更しません）。
 
-各アーカイブ名は`-<target>.tar.gz`で終わり、リリースワークフローはアーカイブを不変タグに公開します。各拡張リポジトリに`IRODORI_CATALOG_TOKEN`リポジトリシークレットを設定し、`hjosugi/irodori-table`でワークフローをディスパッチする権限を持たせてください（リポジトリが組織に移動した場合は組織レベルのシークレットで代替可能）。リリースはカタログ同期をトリガーし、タグ、バージョン、プラットフォームアセット名、GitHub提供のSHA-256ダイジェストを記録します。ディスパッチが一時的に利用できない場合のフォールバックとして5分ごとのスケジュールされたカタログ同期があります。
+各アーカイブ名は`-<target>.tar.gz`で終わり、リリースワークフローはアーカイブを不変タグに公開します。各拡張リポジトリに`IRODORI_CATALOG_TOKEN`リポジトリシークレットを設定し、`irodori-table/irodori-table`でワークフローをディスパッチする権限を持たせてください（リポジトリが組織に移動した場合は組織レベルのシークレットで代替可能）。リリースはカタログ同期をトリガーし、タグ、バージョン、プラットフォームアセット名、GitHub提供のSHA-256ダイジェストを記録します。ディスパッチが一時的に利用できない場合のフォールバックとして5分ごとのスケジュールされたカタログ同期があります。
 
 ## 現在の例
 
 SDKがnpmに公開されるまで、公開コネクターリポジトリを例として使用してください:
 
-- <https://github.com/hjosugi/irodori-extension-duckdb>
-- <https://github.com/hjosugi/irodori-extension-memgraph>
-- <https://github.com/hjosugi/irodori-extension-redis>
+- <https://github.com/irodori-table/irodori-extension-duckdb>
+- <https://github.com/irodori-table/irodori-extension-memgraph>
+- <https://github.com/irodori-table/irodori-extension-redis>

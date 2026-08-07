@@ -8,7 +8,7 @@ small, source-owned, and easy to verify from this repository.
 Follow the Irodori clean-room policy before using reference products, source
 code, screenshots, snippets, themes, or generated assets:
 
-<https://hjosugi.github.io/irodori-docs/clean-room.html>
+<https://irodori-table.github.io/irodori-docs/clean-room.html>
 
 Project-authored code, SDK templates, and examples use `MIT OR 0BSD` unless a
 file states otherwise.

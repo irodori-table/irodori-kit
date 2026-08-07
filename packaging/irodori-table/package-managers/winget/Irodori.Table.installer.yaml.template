@@ -12,7 +12,7 @@ UpgradeBehavior: uninstallPrevious
 ReleaseDate: __YYYY-MM-DD__
 Installers:
   - Architecture: x64
-    InstallerUrl: https://github.com/hjosugi/irodori-table/releases/download/v__VERSION__/__WINDOWS_INSTALLER_ASSET__
+    InstallerUrl: https://github.com/irodori-table/irodori-table/releases/download/v__VERSION__/__WINDOWS_INSTALLER_ASSET__
     InstallerSha256: __SHA256_WINDOWS_INSTALLER__
 ManifestType: installer
 ManifestVersion: __WINGET_MANIFEST_VERSION__

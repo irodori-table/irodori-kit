@@ -2,7 +2,7 @@ $ErrorActionPreference = 'Stop'
 
 $packageName  = 'irodori-table'
 $softwareName = 'Irodori Table*'
-$url64        = 'https://github.com/hjosugi/irodori-table/releases/download/v__VERSION__/__WINDOWS_INSTALLER_ASSET__'
+$url64        = 'https://github.com/irodori-table/irodori-table/releases/download/v__VERSION__/__WINDOWS_INSTALLER_ASSET__'
 
 # Remove any previously installed Irodori Table before installing the new
 # build. Chocolatey re-runs this script on upgrade, and some installer types

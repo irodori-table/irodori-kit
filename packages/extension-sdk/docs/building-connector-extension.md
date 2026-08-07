@@ -52,7 +52,7 @@ Native connector crates should depend on `irodori-connector-abi` by git tag:
 
 ```toml
 [dependencies]
-irodori-connector-abi = { git = "https://github.com/hjosugi/irodori-kit", tag = "v0.6.0" }
+irodori-connector-abi = { git = "https://github.com/irodori-table/irodori-kit", tag = "v0.6.0" }
 serde_json = "1"
 ```
 
@@ -122,7 +122,7 @@ from the sibling kit checkout:
 
 ```toml
 # irodori-extensions/.cargo/config.toml
-[patch."https://github.com/hjosugi/irodori-kit"]
+[patch."https://github.com/irodori-table/irodori-kit"]
 irodori-connector-abi = { path = "../irodori-kit/irodori-connector-abi" }
 ```
 
@@ -158,7 +158,7 @@ extension version.
 Each archive name ends in `-<target>.tar.gz`; the release workflow publishes
 the archives to the immutable tag. Configure an `IRODORI_CATALOG_TOKEN`
 repository secret in each extension repository with permission to dispatch
-workflows in `hjosugi/irodori-table` (an organization-level secret can replace
+workflows in `irodori-table/irodori-table` (an organization-level secret can replace
 these if the repositories move into an organization). The release then triggers
 catalog synchronization, which records the tag, version, platform asset name,
 and GitHub-provided SHA-256 digest. A five-minute scheduled catalog sync is the
@@ -168,6 +168,6 @@ fallback when dispatch is temporarily unavailable.
 
 Use the public connector repos as examples until the SDK is published to npm:
 
-- <https://github.com/hjosugi/irodori-extension-duckdb>
-- <https://github.com/hjosugi/irodori-extension-memgraph>
-- <https://github.com/hjosugi/irodori-extension-redis>
+- <https://github.com/irodori-table/irodori-extension-duckdb>
+- <https://github.com/irodori-table/irodori-extension-memgraph>
+- <https://github.com/irodori-table/irodori-extension-redis>
