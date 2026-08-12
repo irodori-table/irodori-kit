@@ -37,9 +37,6 @@
       "saslScram",
       "webIdentity"
     ],
-    "irodori.clickhouse": [
-      "clientCertificate"
-    ],
     "irodori.cloud-spanner": [
       "googleApplicationDefaultCredentials",
       "serviceAccountImpersonation",
