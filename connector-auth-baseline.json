@@ -54,15 +54,11 @@
       "serviceAccountJwt",
       "workloadIdentity"
     ],
-    "irodori.duckdb": [
-      "extensionCredential"
-    ],
     "irodori.dynamodb": [
       "awsSso",
       "webIdentity"
     ],
     "irodori.elasticsearch": [
-      "jwt",
       "oauth2"
     ],
     "irodori.firebird": [
@@ -132,7 +128,6 @@
       "awsDefaultCredentialsChain",
       "awsSigV4",
       "awsSso",
-      "jwt",
       "oauth2",
       "webIdentity"
     ],

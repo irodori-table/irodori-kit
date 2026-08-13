@@ -20,7 +20,7 @@
  *
  * Usage: node check-connector-auth.mjs <manifest-root>
  */
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -63,11 +63,27 @@ const EVIDENCE = {
   catalogBearerToken: ["catalogBearerToken", "catalogToken"],
   catalogPassword: ["catalogPassword"],
 
-  // NOT `clientSecret` / `client_secret`: an Azure service principal uses that
-  // name too, and crediting it made a connector with no OAuth2 at all look like
-  // it had some. Connectors that really do OAuth2 spell it out — `oauth2ServerUri`,
-  // `oauth2ClientId`, a token endpoint.
-  oauth2: ["oauth2", "oauthClientSecret", "tokenEndpoint", "token_endpoint"],
+  // OAuth2 means performing a grant, not accepting a token somebody else
+  // obtained. A bare `oauth2` substring credits an option merely *named*
+  // `oauth2AccessToken`, which is a bearer token wearing a longer name — so the
+  // evidence is the grant machinery: a token endpoint or a client secret.
+  //
+  // NOT `clientSecret` / `client_secret` either: an Azure service principal
+  // uses that name, and crediting it made a connector with no OAuth2 at all
+  // look like it had some.
+  // `grant_type` is the unambiguous marker: a connector that performs a grant
+  // has to name one. bigquery/bigtable/cloud-spanner do (jwt-bearer and
+  // refresh_token), iceberg does (client_credentials); elasticsearch, which
+  // only forwards a token somebody else obtained, does not.
+  oauth2: [
+    "grant_type",
+    "oauth2ServerUri",
+    "oauthServerUri",
+    "oauth2ClientSecret",
+    "oauthClientSecret",
+    "tokenEndpoint",
+    "token_endpoint",
+  ],
   oauthAccessToken: ["oauthAccessToken"],
   oidc: ["oidc"],
   saml: ["saml"],
@@ -180,7 +196,18 @@ if (!existsSync(driverPath)) {
     `${extensionId} declares ${declared.length} auth methods but has no src/driver.rs to implement them`,
   );
 }
-const driver = stripComments(readFileSync(driverPath, "utf8"));
+// Every module, not just driver.rs: iceberg keeps its REST-catalog OAuth2 in
+// rest_catalog.rs and hudi its timeline handling in hudi.rs, so reading one
+// file judges a connector on a fraction of itself.
+const driver = readSources(join(root, "src")).map(stripComments).join("\n");
+
+function readSources(dir) {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) return readSources(path);
+    return entry.name.endsWith(".rs") ? [readFileSync(path, "utf8")] : [];
+  });
+}
 
 /**
  * Remove Rust comments before looking for evidence.
