@@ -122,14 +122,10 @@
       "awsIam",
       "awsSso",
       "kerberos",
-      "ldap",
-      "mongodbX509",
-      "oidc",
       "webIdentity"
     ],
     "irodori.motherduck": [
       "browserSso",
-      "motherduckToken",
       "oauth2"
     ],
     "irodori.neo4j": [
@@ -151,9 +147,6 @@
       "cloudIamToken",
       "kerberos",
       "oauth2"
-    ],
-    "irodori.questdb": [
-      "clientCertificate"
     ],
     "irodori.redis": [
       "clientCertificate"

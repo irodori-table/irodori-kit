@@ -180,7 +180,56 @@ if (!existsSync(driverPath)) {
     `${extensionId} declares ${declared.length} auth methods but has no src/driver.rs to implement them`,
   );
 }
-const driver = readFileSync(driverPath, "utf8");
+const driver = stripComments(readFileSync(driverPath, "utf8"));
+
+/**
+ * Remove Rust comments before looking for evidence.
+ *
+ * Without this, *writing about* a method marks it implemented: a comment
+ * explaining why `kerberos` cannot be supported was itself counted as proof
+ * that it was. That is the worst shape of false positive — it rewards
+ * discussing auth over doing it, and it would let a real declaration be
+ * dropped from the baseline on the strength of a sentence.
+ *
+ * String literals are kept: option key names live in them and are genuine
+ * evidence. So the scanner has to know when it is inside one, or a `//` in a
+ * URL would swallow the rest of the line.
+ */
+function stripComments(source) {
+  let out = "";
+  let i = 0;
+  while (i < source.length) {
+    const two = source.slice(i, i + 2);
+    if (two === "//") {
+      while (i < source.length && source[i] !== "\n") i += 1;
+      continue;
+    }
+    if (two === "/*") {
+      i += 2;
+      let depth = 1; // Rust block comments nest
+      while (i < source.length && depth > 0) {
+        if (source.slice(i, i + 2) === "/*") { depth += 1; i += 2; continue; }
+        if (source.slice(i, i + 2) === "*/") { depth -= 1; i += 2; continue; }
+        i += 1;
+      }
+      continue;
+    }
+    if (source[i] === '"') {
+      out += source[i];
+      i += 1;
+      while (i < source.length) {
+        if (source[i] === "\\") { out += source.slice(i, i + 2); i += 2; continue; }
+        out += source[i];
+        if (source[i] === '"') { i += 1; break; }
+        i += 1;
+      }
+      continue;
+    }
+    out += source[i];
+    i += 1;
+  }
+  return out;
+}
 
 const unknown = declared.filter((id) => !(id in EVIDENCE));
 if (unknown.length > 0) {
