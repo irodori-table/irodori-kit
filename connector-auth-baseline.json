@@ -10,9 +10,6 @@
   ],
   "generatedFrom": "connector.config.json authMethods vs src/driver.rs, 2026-08-13",
   "connectors": {
-    "irodori.arangodb": [
-      "clientCertificate"
-    ],
     "irodori.athena": [
       "awsAssumeRole",
       "awsSso",
@@ -43,7 +40,6 @@
       "workloadIdentity"
     ],
     "irodori.couchbase": [
-      "clientCertificate",
       "ldap",
       "oidc",
       "saml"
@@ -83,7 +79,6 @@
       "webIdentity"
     ],
     "irodori.elasticsearch": [
-      "clientCertificate",
       "jwt",
       "oauth2"
     ],
@@ -138,7 +133,6 @@
       "workloadIdentity"
     ],
     "irodori.influxdb": [
-      "clientCertificate",
       "oauthAccessToken"
     ],
     "irodori.iotdb": [
@@ -150,9 +144,6 @@
       "bearerToken",
       "clientCertificate",
       "kerberos"
-    ],
-    "irodori.milvus": [
-      "clientCertificate"
     ],
     "irodori.mongodb": [
       "awsAssumeRole",
@@ -180,7 +171,6 @@
       "awsDefaultCredentialsChain",
       "awsSigV4",
       "awsSso",
-      "clientCertificate",
       "jwt",
       "oauth2",
       "webIdentity"
@@ -190,9 +180,6 @@
       "cloudIamToken",
       "kerberos",
       "oauth2"
-    ],
-    "irodori.qdrant": [
-      "clientCertificate"
     ],
     "irodori.questdb": [
       "clientCertificate"
@@ -229,7 +216,6 @@
       "windowsIntegrated"
     ],
     "irodori.trino-presto": [
-      "clientCertificate",
       "externalBrowser",
       "jwt",
       "kerberos",
