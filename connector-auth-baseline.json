@@ -15,13 +15,9 @@
       "webIdentity"
     ],
     "irodori.bigquery": [
-      "googleApplicationDefaultCredentials",
-      "serviceAccountImpersonation",
       "workloadIdentity"
     ],
     "irodori.bigtable": [
-      "googleApplicationDefaultCredentials",
-      "serviceAccountImpersonation",
       "workloadIdentity"
     ],
     "irodori.cassandra": [
@@ -34,8 +30,6 @@
       "webIdentity"
     ],
     "irodori.cloud-spanner": [
-      "googleApplicationDefaultCredentials",
-      "serviceAccountImpersonation",
       "workloadIdentity"
     ],
     "irodori.couchbase": [
