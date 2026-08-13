@@ -11,7 +11,6 @@
   "generatedFrom": "connector.config.json authMethods vs src/driver.rs, 2026-08-13",
   "connectors": {
     "irodori.athena": [
-      "awsAssumeRole",
       "awsSso",
       "webIdentity"
     ],
@@ -74,7 +73,6 @@
       "extensionCredential"
     ],
     "irodori.dynamodb": [
-      "awsAssumeRole",
       "awsSso",
       "webIdentity"
     ],
