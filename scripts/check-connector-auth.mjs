@@ -63,7 +63,11 @@ const EVIDENCE = {
   catalogBearerToken: ["catalogBearerToken", "catalogToken"],
   catalogPassword: ["catalogPassword"],
 
-  oauth2: ["oauth2", "clientSecret", "client_secret", "tokenEndpoint"],
+  // NOT `clientSecret` / `client_secret`: an Azure service principal uses that
+  // name too, and crediting it made a connector with no OAuth2 at all look like
+  // it had some. Connectors that really do OAuth2 spell it out — `oauth2ServerUri`,
+  // `oauth2ClientId`, a token endpoint.
+  oauth2: ["oauth2", "oauthClientSecret", "tokenEndpoint", "token_endpoint"],
   oauthAccessToken: ["oauthAccessToken"],
   oidc: ["oidc"],
   saml: ["saml"],
@@ -84,14 +88,20 @@ const EVIDENCE = {
   awsIam: ["awsIam", "MONGODB-AWS", "awsAccessKey"],
   awsSigV4: ["sigv4", "SigV4", "signRequest", "awsAccessKey"],
   awsProfile: ["awsProfile", "profile"],
-  awsSso: ["awsSso", "ssoStart", "sso"],
+  // NOT bare `sso`: it matched an unrelated substring in a test fixture.
+  // `credential_chain` is the real mechanism — DuckDB and the AWS SDK both
+  // resolve SSO through it rather than through a named SSO code path.
+  awsSso: ["awsSso", "ssoStart", "credential_chain"],
   awsAssumeRole: ["assumeRole", "roleArn", "AssumeRole"],
   awsDefaultCredentialsChain: [
     "defaultCredentialsChain",
     "credentialsChain",
+    "credential_chain",
     "awsProfile",
   ],
-  webIdentity: ["webIdentity", "WebIdentity"],
+  // The SDK and DuckDB both reach web identity through the credential chain
+  // (the `sts` link), never through a named entry point.
+  webIdentity: ["webIdentity", "WebIdentity", "web_identity", "credential_chain"],
   sessionToken: ["sessionToken", "securityToken"],
 
   serviceAccountJson: ["serviceAccountJson", "credentialsJson"],
@@ -104,10 +114,13 @@ const EVIDENCE = {
   ],
   workloadIdentity: ["workloadIdentity", "workload_identity"],
 
-  azureAd: ["azureAd", "azure_ad", "AzureAD"],
+  azureAd: ["azureAd", "azure_ad", "AzureAD", "azureCredentialChain"],
   servicePrincipal: ["servicePrincipal", "tenantId"],
-  servicePrincipalCertificate: ["servicePrincipalCertificate"],
-  managedIdentity: ["managedIdentity"],
+  servicePrincipalCertificate: [
+    "servicePrincipalCertificate",
+    "CLIENT_CERTIFICATE_PATH",
+  ],
+  managedIdentity: ["managedIdentity", "managed_identity"],
   sasToken: ["sasToken"],
 
   databricksPersonalAccessToken: ["pat", "accessToken"],

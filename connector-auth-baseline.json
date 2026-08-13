@@ -51,22 +51,13 @@
     ],
     "irodori.delta-lake": [
       "awsAssumeRole",
-      "awsDefaultCredentialsChain",
-      "awsSigV4",
-      "awsSso",
-      "azureAd",
       "catalogBearerToken",
       "catalogPassword",
       "googleApplicationDefaultCredentials",
-      "managedIdentity",
       "oauth2",
-      "sasToken",
       "serviceAccountImpersonation",
       "serviceAccountJson",
       "serviceAccountJwt",
-      "servicePrincipal",
-      "servicePrincipalCertificate",
-      "webIdentity",
       "workloadIdentity"
     ],
     "irodori.duckdb": [
@@ -94,40 +85,22 @@
     ],
     "irodori.hudi": [
       "awsAssumeRole",
-      "awsDefaultCredentialsChain",
-      "awsSigV4",
-      "awsSso",
-      "azureAd",
       "catalogBearerToken",
       "catalogPassword",
       "googleApplicationDefaultCredentials",
-      "managedIdentity",
       "oauth2",
-      "sasToken",
       "serviceAccountImpersonation",
       "serviceAccountJson",
       "serviceAccountJwt",
-      "servicePrincipal",
-      "servicePrincipalCertificate",
-      "webIdentity",
       "workloadIdentity"
     ],
     "irodori.iceberg": [
       "awsAssumeRole",
-      "awsDefaultCredentialsChain",
-      "awsSigV4",
-      "awsSso",
-      "azureAd",
       "catalogPassword",
       "googleApplicationDefaultCredentials",
-      "managedIdentity",
-      "sasToken",
       "serviceAccountImpersonation",
       "serviceAccountJson",
       "serviceAccountJwt",
-      "servicePrincipal",
-      "servicePrincipalCertificate",
-      "webIdentity",
       "workloadIdentity"
     ],
     "irodori.influxdb": [
@@ -186,11 +159,7 @@
       "clientCertificate"
     ],
     "irodori.s3-tables": [
-      "awsAssumeRole",
-      "awsDefaultCredentialsChain",
-      "awsSigV4",
-      "awsSso",
-      "webIdentity"
+      "awsAssumeRole"
     ],
     "irodori.scylladb": [
       "clientCertificate",
