@@ -93,9 +93,6 @@
       "serviceAccountJwt",
       "workloadIdentity"
     ],
-    "irodori.influxdb": [
-      "oauthAccessToken"
-    ],
     "irodori.iotdb": [
       "bearerToken",
       "clientCertificate",
@@ -164,7 +161,6 @@
     ],
     "irodori.trino-presto": [
       "externalBrowser",
-      "jwt",
       "kerberos",
       "ldap",
       "oauth2"
