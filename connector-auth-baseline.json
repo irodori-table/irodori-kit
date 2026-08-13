@@ -152,7 +152,6 @@
       "snowflakeWorkloadIdentity"
     ],
     "irodori.sqlserver": [
-      "accessToken",
       "azureAd",
       "managedIdentity",
       "servicePrincipal",
