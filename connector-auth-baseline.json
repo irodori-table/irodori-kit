@@ -103,7 +103,6 @@
     ],
     "irodori.memgraph": [
       "bearerToken",
-      "clientCertificate",
       "kerberos"
     ],
     "irodori.mongodb": [
@@ -120,7 +119,6 @@
     ],
     "irodori.neo4j": [
       "bearerToken",
-      "clientCertificate",
       "kerberos"
     ],
     "irodori.opensearch": [
