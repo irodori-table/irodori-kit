@@ -39,7 +39,6 @@
     ],
     "irodori.databricks": [
       "databricksAzureManagedIdentity",
-      "databricksOAuthM2M",
       "databricksOAuthToken",
       "databricksOAuthU2M"
     ],
