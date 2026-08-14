@@ -57,9 +57,6 @@
       "awsSso",
       "webIdentity"
     ],
-    "irodori.elasticsearch": [
-      "oauth2"
-    ],
     "irodori.firebird": [
       "kerberos",
       "pluginToken"
@@ -122,7 +119,6 @@
       "awsDefaultCredentialsChain",
       "awsSigV4",
       "awsSso",
-      "oauth2",
       "webIdentity"
     ],
     "irodori.oracle": [
@@ -160,8 +156,7 @@
     "irodori.trino-presto": [
       "externalBrowser",
       "kerberos",
-      "ldap",
-      "oauth2"
+      "ldap"
     ]
   }
 }
