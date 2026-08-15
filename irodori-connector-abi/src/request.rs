@@ -73,10 +73,20 @@ fn scalar_string(value: &Value) -> Option<String> {
         Value::Bool(value) => value.to_string(),
         // A wrapped value: `{"value": "…"}`, `{"secret": "…"}`, and the
         // variants the host uses for secret handles and endpoints.
-        Value::Object(object) => ["value", "secret", "token", "password", "url", "uri", "text"]
-            .iter()
-            .find_map(|key| object.get(*key).and_then(Value::as_str))
-            .map(ToOwned::to_owned)?,
+        Value::Object(object) => [
+            "value",
+            "secret",
+            "token",
+            "password",
+            "apiKey",
+            "accessToken",
+            "url",
+            "uri",
+            "text",
+        ]
+        .iter()
+        .find_map(|key| object.get(*key).and_then(Value::as_str))
+        .map(ToOwned::to_owned)?,
         _ => return None,
     };
     let text = text.trim().to_string();

@@ -3,7 +3,7 @@
     "Known-unimplemented authentication methods, per connector extension.",
     "scripts/check-connector-auth.mjs fails on any declared method that is not",
     "in this file and has no implementation in the connector's src/driver.rs,",
-    "and on any entry here that IS implemented — so this list can only shrink.",
+    "and on any entry here that IS implemented \u2014 so this list can only shrink.",
     "Delete an entry when you implement the method, or when you drop the",
     "declaration from connector.config.json. Tracked in",
     "https://github.com/irodori-table/irodori-table/issues/232."
@@ -23,6 +23,7 @@
     "irodori.cassandra": [
       "awsAssumeRole",
       "awsDefaultCredentialsChain",
+      "awsProfile",
       "awsSigV4",
       "clientCertificate",
       "kerberos",
