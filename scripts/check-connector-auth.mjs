@@ -140,7 +140,19 @@ const EVIDENCE = {
   ],
   workloadIdentity: ["workloadIdentity", "workload_identity"],
 
-  azureAd: ["azureAd", "azure_ad", "AzureAD", "azureCredentialChain"],
+  // The Entra token field names count too. A connector that reads `aadToken`
+  // or mints one from a tenant/client pair honours the declared `azureAd`
+  // method whether or not it spells the method's own name anywhere.
+  azureAd: [
+    "azureAd",
+    "azure_ad",
+    "AzureAD",
+    "azureCredentialChain",
+    "aadToken",
+    "entraToken",
+    "azureAccessToken",
+    "azureTenantId",
+  ],
   servicePrincipal: ["servicePrincipal", "tenantId"],
   servicePrincipalCertificate: [
     "servicePrincipalCertificate",
