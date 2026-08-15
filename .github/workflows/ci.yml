@@ -25,6 +25,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # The reusable workflows name their own version and owner. Three separate
+      # fleet-wide breakages came from one of those drifting, each visible only
+      # after the extension repositories adopted the tag.
+      - name: Check workflow self-references
+        run: node scripts/check-workflow-refs.mjs
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
