@@ -72,6 +72,9 @@ jobs:
         run: npm run validate
         working-directory: .irodori-kit/packages/extension-sdk
 
+      - name: Check declared auth methods against the driver
+        run: node .irodori-kit/scripts/check-connector-auth.mjs "${{ inputs.manifest-root }}"
+
       - name: Check Rust formatting
         run: make fmt
 

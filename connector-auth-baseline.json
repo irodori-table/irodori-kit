@@ -1,0 +1,162 @@
+{
+  "$comment": [
+    "Known-unimplemented authentication methods, per connector extension.",
+    "scripts/check-connector-auth.mjs fails on any declared method that is not",
+    "in this file and has no implementation in the connector's src/driver.rs,",
+    "and on any entry here that IS implemented — so this list can only shrink.",
+    "Delete an entry when you implement the method, or when you drop the",
+    "declaration from connector.config.json. Tracked in",
+    "https://github.com/irodori-table/irodori-table/issues/232."
+  ],
+  "generatedFrom": "connector.config.json authMethods vs src/driver.rs, 2026-08-13",
+  "connectors": {
+    "irodori.athena": [
+      "awsSso",
+      "webIdentity"
+    ],
+    "irodori.bigquery": [
+      "workloadIdentity"
+    ],
+    "irodori.bigtable": [
+      "workloadIdentity"
+    ],
+    "irodori.cassandra": [
+      "awsAssumeRole",
+      "awsDefaultCredentialsChain",
+      "awsSigV4",
+      "clientCertificate",
+      "kerberos",
+      "saslScram",
+      "webIdentity"
+    ],
+    "irodori.cloud-spanner": [
+      "workloadIdentity"
+    ],
+    "irodori.couchbase": [
+      "ldap",
+      "oidc",
+      "saml"
+    ],
+    "irodori.databricks": [
+      "databricksAzureManagedIdentity",
+      "databricksOAuthToken",
+      "databricksOAuthU2M"
+    ],
+    "irodori.delta-lake": [
+      "awsAssumeRole",
+      "catalogBearerToken",
+      "catalogPassword",
+      "googleApplicationDefaultCredentials",
+      "oauth2",
+      "serviceAccountImpersonation",
+      "serviceAccountJson",
+      "serviceAccountJwt",
+      "workloadIdentity"
+    ],
+    "irodori.dynamodb": [
+      "awsSso",
+      "webIdentity"
+    ],
+    "irodori.firebird": [
+      "kerberos",
+      "pluginToken"
+    ],
+    "irodori.hive": [
+      "bearerToken",
+      "clientCertificate",
+      "jwt",
+      "kerberos",
+      "ldap",
+      "oauth2"
+    ],
+    "irodori.hudi": [
+      "awsAssumeRole",
+      "catalogBearerToken",
+      "catalogPassword",
+      "googleApplicationDefaultCredentials",
+      "oauth2",
+      "serviceAccountImpersonation",
+      "serviceAccountJson",
+      "serviceAccountJwt",
+      "workloadIdentity"
+    ],
+    "irodori.iceberg": [
+      "awsAssumeRole",
+      "catalogPassword",
+      "googleApplicationDefaultCredentials",
+      "serviceAccountImpersonation",
+      "serviceAccountJson",
+      "serviceAccountJwt",
+      "workloadIdentity"
+    ],
+    "irodori.iotdb": [
+      "bearerToken",
+      "clientCertificate",
+      "kerberos"
+    ],
+    "irodori.memgraph": [
+      "bearerToken",
+      "kerberos"
+    ],
+    "irodori.mongodb": [
+      "awsAssumeRole",
+      "awsDefaultCredentialsChain",
+      "awsIam",
+      "awsSso",
+      "kerberos",
+      "webIdentity"
+    ],
+    "irodori.motherduck": [
+      "browserSso",
+      "oauth2"
+    ],
+    "irodori.neo4j": [
+      "bearerToken",
+      "kerberos"
+    ],
+    "irodori.opensearch": [
+      "awsAssumeRole",
+      "awsDefaultCredentialsChain",
+      "awsSigV4",
+      "awsSso",
+      "webIdentity"
+    ],
+    "irodori.oracle": [
+      "accessToken",
+      "cloudIamToken",
+      "kerberos",
+      "oauth2"
+    ],
+    "irodori.redis": [
+      "clientCertificate"
+    ],
+    "irodori.s3-tables": [
+      "awsAssumeRole"
+    ],
+    "irodori.scylladb": [
+      "clientCertificate",
+      "kerberos",
+      "saslScram"
+    ],
+    "irodori.snowflake": [
+      "browserSso",
+      "externalBrowser",
+      "oauth2",
+      "saml",
+      "snowflakeKeyPair",
+      "snowflakeWorkloadIdentity"
+    ],
+    "irodori.sqlserver": [
+      "azureAd",
+      "managedIdentity",
+      "servicePrincipal",
+      "servicePrincipalCertificate",
+      "windowsIntegrated"
+    ],
+    "irodori.trino-presto": [
+      "externalBrowser",
+      "kerberos",
+      "ldap"
+    ]
+  }
+}
