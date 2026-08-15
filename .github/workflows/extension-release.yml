@@ -24,7 +24,7 @@ permissions:
 jobs:
   validate:
     name: Validate release source
-    uses: irodori-table/irodori-kit/.github/workflows/extension-ci.yml@v0.7.5
+    uses: irodori-table/irodori-kit/.github/workflows/extension-ci.yml@v0.7.7
     with:
       checkout-ref: ${{ inputs.release_tag || github.ref_name }}
       manifest-root: "."
@@ -157,7 +157,7 @@ jobs:
         env:
           GH_TOKEN: ${{ env.CATALOG_TOKEN }}
         run: |
-          gh api --method POST repos/hjosugi/irodori-table/dispatches \
+          gh api --method POST repos/irodori-table/irodori-table/dispatches \
             -f event_type=extension-released \
             -f 'client_payload[repository]=${{ github.repository }}' \
             -f "client_payload[tag]=${RELEASE_TAG}"
