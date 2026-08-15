@@ -43,11 +43,13 @@ pub fn request_containers(request: &Value) -> Vec<&Value> {
 /// An object is unwrapped when it looks like a wrapped value — the host may
 /// deliver a secret as `{"value": "…"}` rather than a bare string.
 pub fn option_string(request: &Value, fields: &[&str]) -> Option<String> {
-    request_containers(request).into_iter().find_map(|container| {
-        fields
-            .iter()
-            .find_map(|field| container.get(*field).and_then(scalar_string))
-    })
+    request_containers(request)
+        .into_iter()
+        .find_map(|container| {
+            fields
+                .iter()
+                .find_map(|field| container.get(*field).and_then(scalar_string))
+        })
 }
 
 /// The same lookup as [`option_string`], as a boolean.
@@ -55,11 +57,12 @@ pub fn option_string(request: &Value, fields: &[&str]) -> Option<String> {
 /// Accepts the JSON literal and the spellings a text field produces, because a
 /// connection form has no way to submit a real boolean.
 pub fn option_bool(request: &Value, fields: &[&str]) -> Option<bool> {
-    option_string(request, fields).and_then(|value| match value.trim().to_ascii_lowercase().as_str()
-    {
-        "1" | "true" | "yes" | "on" => Some(true),
-        "0" | "false" | "no" | "off" => Some(false),
-        _ => None,
+    option_string(request, fields).and_then(|value| {
+        match value.trim().to_ascii_lowercase().as_str() {
+            "1" | "true" | "yes" | "on" => Some(true),
+            "0" | "false" | "no" | "off" => Some(false),
+            _ => None,
+        }
     })
 }
 
@@ -208,13 +211,22 @@ mod tests {
     #[test]
     fn the_first_matching_field_name_wins() {
         let request = json!({ "profile": { "options": { "b": "second" } } });
-        assert_eq!(option_string(&request, &["a", "b"]).as_deref(), Some("second"));
+        assert_eq!(
+            option_string(&request, &["a", "b"]).as_deref(),
+            Some("second")
+        );
     }
 
     #[test]
     fn booleans_accept_the_spellings_a_text_field_produces() {
-        for (text, expected) in [("true", true), ("Yes", true), ("1", true),
-                                 ("false", false), ("off", false), ("0", false)] {
+        for (text, expected) in [
+            ("true", true),
+            ("Yes", true),
+            ("1", true),
+            ("false", false),
+            ("off", false),
+            ("0", false),
+        ] {
             let request = json!({ "profile": { "options": { "flag": text } } });
             assert_eq!(option_bool(&request, &["flag"]), Some(expected), "{text}");
         }
