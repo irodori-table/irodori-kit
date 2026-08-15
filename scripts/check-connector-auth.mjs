@@ -103,7 +103,17 @@ const EVIDENCE = {
 
   awsIam: ["awsIam", "MONGODB-AWS", "awsAccessKey"],
   awsSigV4: ["sigv4", "SigV4", "signRequest", "awsAccessKey"],
-  awsProfile: ["awsProfile", "profile"],
+  // NOT bare `profile`: every connector contains `request.get("profile")` to
+  // find the connection profile, which has nothing to do with an AWS named
+  // profile. That one token credited nine connectors for free and hid a real
+  // gap in cassandra until the shared helpers moved out of the drivers.
+  awsProfile: [
+    "awsProfile",
+    "AWS_PROFILE",
+    "profile_name",
+    "from_profile",
+    "credentials_file",
+  ],
   // NOT bare `sso`: it matched an unrelated substring in a test fixture.
   // `credential_chain` is the real mechanism — DuckDB and the AWS SDK both
   // resolve SSO through it rather than through a named SSO code path.
