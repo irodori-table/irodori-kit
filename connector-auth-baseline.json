@@ -14,12 +14,8 @@
       "awsSso",
       "webIdentity"
     ],
-    "irodori.bigquery": [
-      "workloadIdentity"
-    ],
-    "irodori.bigtable": [
-      "workloadIdentity"
-    ],
+    "irodori.bigquery": [],
+    "irodori.bigtable": [],
     "irodori.cassandra": [
       "awsAssumeRole",
       "awsDefaultCredentialsChain",
@@ -30,9 +26,7 @@
       "saslScram",
       "webIdentity"
     ],
-    "irodori.cloud-spanner": [
-      "workloadIdentity"
-    ],
+    "irodori.cloud-spanner": [],
     "irodori.couchbase": [
       "ldap",
       "oidc",
