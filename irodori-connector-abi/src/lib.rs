@@ -15,6 +15,13 @@ pub struct IrodoriConnectorBuffer {
     pub len: usize,
 }
 
+mod request;
+
+pub use request::{
+    collect_url_auth, option_bool, option_string, percent_encode, push_sensitive, redact,
+    request_containers,
+};
+
 pub fn owned_buffer(value: String) -> IrodoriConnectorBuffer {
     let mut bytes = value.into_bytes().into_boxed_slice();
     let buffer = IrodoriConnectorBuffer {
