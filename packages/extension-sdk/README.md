@@ -67,7 +67,7 @@ npm run typegen:check
 Native connector extensions use this package for manifest validation and local
 development, and use the Rust `irodori-connector-abi` crate for the native ABI
 entrypoints. The current public connector examples are the
-`hjosugi/irodori-extension-*` repositories, such as:
+`irodori-table/irodori-extension-*` repositories, such as:
 
 - <https://github.com/irodori-table/irodori-extension-duckdb>
 - <https://github.com/irodori-table/irodori-extension-memgraph>

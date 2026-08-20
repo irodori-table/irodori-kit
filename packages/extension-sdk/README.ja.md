@@ -58,7 +58,7 @@ npm run typegen:check
 
 ## コネクタ拡張機能
 
-ネイティブコネクタ拡張機能は、マニフェスト検証とローカル開発にこのパッケージを使用し、ネイティブABIエントリポイントにはRustの`irodori-connector-abi`クレートを使用します。現在の公開コネクタ例は`hjosugi/irodori-extension-*`リポジトリ群で、例えば：
+ネイティブコネクタ拡張機能は、マニフェスト検証とローカル開発にこのパッケージを使用し、ネイティブABIエントリポイントにはRustの`irodori-connector-abi`クレートを使用します。現在の公開コネクタ例は`irodori-table/irodori-extension-*`リポジトリ群で、例えば：
 
 - <https://github.com/irodori-table/irodori-extension-duckdb>
 - <https://github.com/irodori-table/irodori-extension-memgraph>

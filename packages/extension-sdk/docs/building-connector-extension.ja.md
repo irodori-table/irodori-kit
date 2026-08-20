@@ -48,7 +48,7 @@ IRODORI_EXTENSIONS_ROOT=../irodori-extensions \
 
 ```toml
 [dependencies]
-irodori-connector-abi = { git = "https://github.com/irodori-table/irodori-kit", tag = "v0.6.0" }
+irodori-connector-abi = { git = "https://github.com/irodori-table/irodori-kit", tag = "v0.9.0" }
 serde_json = "1"
 ```
 

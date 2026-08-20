@@ -1,0 +1,30 @@
+name: Fleet dependency consistency
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fleet-dependency-consistency
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Check connector dependency pins
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Test fleet policy
+        run: node --test scripts/fleet-dependencies.test.mjs
+
+      - name: Check live connector fleet
+        run: node scripts/check-fleet-dependencies.mjs
