@@ -142,6 +142,8 @@
       "snowflakeWorkloadIdentity"
     ],
     "irodori.sqlserver": [
+      "managedIdentity",
+      "servicePrincipal",
       "servicePrincipalCertificate",
       "windowsIntegrated"
     ],

@@ -104,6 +104,9 @@ jobs:
           grep -Fq "ref: v${version}" .github/workflows/extension-ci.yml
           grep -Fq "ref: v${version}" .github/workflows/extension-release.yml
 
+      - name: Test connector consistency guards
+        run: node --test scripts/*.test.mjs
+
       - name: Check generated SDK API
         working-directory: packages/extension-sdk
         run: npm run typegen:check

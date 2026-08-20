@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: irodori-table/irodori-kit
-          ref: v0.8.3
+          ref: v0.8.4
           path: .irodori-kit
 
       - name: Install Rust toolchain
@@ -74,6 +74,9 @@ jobs:
 
       - name: Check declared auth methods against the driver
         run: node .irodori-kit/scripts/check-connector-auth.mjs "${{ inputs.manifest-root }}"
+
+      - name: Check declared connection fields against the driver
+        run: node .irodori-kit/scripts/check-connector-fields.mjs "${{ inputs.manifest-root }}"
 
       - name: Check Rust formatting
         run: make fmt

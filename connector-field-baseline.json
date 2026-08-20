@@ -1,0 +1,309 @@
+{
+  "$comment": [
+    "Known-unread connection field bindings, per connector extension.",
+    "scripts/check-connector-fields.mjs fails on a declared binding absent from",
+    "this file and the connector Rust source, and on an entry that becomes read",
+    "or is no longer declared. Delete entries as implementations or manifests",
+    "are corrected. Tracked in irodori-table/irodori-table#230 and #232."
+  ],
+  "generatedFrom": "connector.config.json fields vs Rust string literals, 2026-08-20",
+  "connectors": {
+    "irodori.arangodb": [
+      "caCertificate",
+      "clientCertificate",
+      "clientPrivateKey",
+      "clientPrivateKeyPassphrase"
+    ],
+    "irodori.athena": [
+      "caCertificate",
+      "Catalog",
+      "clientCertificate",
+      "clientPrivateKey",
+      "Database",
+      "host",
+      "OutputLocation",
+      "WorkGroup"
+    ],
+    "irodori.bigquery": [
+      "caCertificate",
+      "clientCertificate",
+      "clientId",
+      "clientPrivateKey",
+      "clientSecret",
+      "credentialConfig",
+      "privateKeyPassphrase",
+      "refreshToken",
+      "subjectToken",
+      "targetPrincipal",
+      "user"
+    ],
+    "irodori.bigtable": [
+      "caCertificate",
+      "clientCertificate",
+      "clientId",
+      "clientPrivateKey",
+      "clientSecret",
+      "credentialConfig",
+      "privateKeyPassphrase",
+      "refreshToken",
+      "subjectToken",
+      "targetPrincipal",
+      "user"
+    ],
+    "irodori.cassandra": [
+      "caCertificate",
+      "clientCertificate",
+      "clientPrivateKey"
+    ],
+    "irodori.clickhouse": [
+      "caCertificate",
+      "clientCertificate",
+      "clientPrivateKey",
+      "clientPrivateKeyPassphrase",
+      "protocol",
+      "secure"
+    ],
+    "irodori.cloud-spanner": [
+      "caCertificate",
+      "clientCertificate",
+      "clientId",
+      "clientPrivateKey",
+      "clientSecret",
+      "credentialConfig",
+      "endpoint",
+      "privateKeyPassphrase",
+      "refreshToken",
+      "subjectToken",
+      "targetPrincipal",
+      "user"
+    ],
+    "irodori.couchbase": [
+      "caCertificate",
+      "clientCertificate",
+      "clientPrivateKey",
+      "clientPrivateKeyPassphrase",
+      "collection",
+      "database"
+    ],
+    "irodori.databricks": [
+      "Auth_Flow",
+      "AuthMech",
+      "AzureTenantId",
+      "caCertificate",
+      "clientCertificate",
+      "clientPrivateKey",
+      "ConnSchema",
+      "OAuth2ClientId",
+      "OAuth2Secret",
+      "port",
+      "UID"
+    ],
+    "irodori.delta-lake": [
+      "accessToken",
+      "caCertificate",
+      "catalogType",
+      "catalogUri",
+      "clientCertificate",
+      "clientPrivateKey",
+      "clientPrivateKeyPassphrase",
+      "credentialVending",
+      "roleArn",
+      "ssoSession",
+      "storageBackend",
+      "warehouse",
+      "webIdentityToken"
+    ],
+    "irodori.duckdb": [
+      "token"
+    ],
+    "irodori.dynamodb": [
+      "caCertificate",
+      "clientCertificate",
+      "clientPrivateKey",
+      "host"
+    ],
+    "irodori.elasticsearch": [
+      "caCertificate",
+      "clientCertificate",
+      "clientId",
+      "clientPrivateKey",
+      "clientPrivateKeyPassphrase",
+      "clientSecret",
+      "database",
+      "refreshToken"
+    ],
+    "irodori.firebird": [
+      "caCertificate",
+      "clientCertificate",
+      "clientPrivateKey"
+    ],
+    "irodori.hive": [
+      "caCertificate",
+      "catalogUri",
+      "clientCertificate",
+      "clientPrivateKey",
+      "user",
+      "warehouse"
+    ],
+    "irodori.hudi": [
+      "accessToken",
+      "caCertificate",
+      "catalogType",
+      "catalogUri",
+      "clientCertificate",
+      "clientPrivateKey",
+      "clientPrivateKeyPassphrase",
+      "credentialVending",
+      "roleArn",
+      "ssoSession",
+      "storageBackend",
+      "warehouse",
+      "webIdentityToken"
+    ],
+    "irodori.iceberg": [
+      "accessToken",
+      "caCertificate",
+      "clientCertificate",
+      "clientPrivateKey",
+      "clientPrivateKeyPassphrase",
+      "credentialVending",
+      "refreshToken",
+      "roleArn",
+      "ssoSession",
+      "storageBackend",
+      "webIdentityToken"
+    ],
+    "irodori.influxdb": [
+      "caCertificate",
+      "clientCertificate",
+      "clientPrivateKey",
+      "clientPrivateKeyPassphrase",
+      "user"
+    ],
+    "irodori.iotdb": [
+      "caCertificate",
+      "clientCertificate",
+      "clientPrivateKey"
+    ],
+    "irodori.memgraph": [
+      "caCertificate",
+      "clientPrivateKey",
+      "clientPrivateKeyPassphrase"
+    ],
+    "irodori.milvus": [
+      "caCertificate",
+      "clientCertificate",
+      "clientPrivateKey",
+      "clientPrivateKeyPassphrase",
+      "database"
+    ],
+    "irodori.mongodb": [
+      "accessToken",
+      "awsProfile",
+      "caCertificate",
+      "clientCertificate",
+      "clientId",
+      "clientPrivateKey",
+      "clientPrivateKeyPassphrase",
+      "clientSecret",
+      "refreshToken",
+      "region"
+    ],
+    "irodori.motherduck": [
+      "caCertificate",
+      "clientCertificate",
+      "clientPrivateKey",
+      "host"
+    ],
+    "irodori.neo4j": [
+      "caCertificate",
+      "clientPrivateKey",
+      "clientPrivateKeyPassphrase"
+    ],
+    "irodori.opensearch": [
+      "awsProfile",
+      "caCertificate",
+      "clientCertificate",
+      "clientId",
+      "clientPrivateKey",
+      "clientPrivateKeyPassphrase",
+      "clientSecret",
+      "database",
+      "refreshToken",
+      "region"
+    ],
+    "irodori.oracle": [
+      "caCertificate",
+      "clientCertificate",
+      "clientPrivateKey",
+      "clientPrivateKeyPassphrase"
+    ],
+    "irodori.pinecone": [
+      "caCertificate",
+      "clientCertificate",
+      "clientPrivateKey",
+      "environment",
+      "host"
+    ],
+    "irodori.qdrant": [
+      "caCertificate",
+      "clientCertificate",
+      "clientPrivateKey",
+      "clientPrivateKeyPassphrase",
+      "database",
+      "protocol"
+    ],
+    "irodori.questdb": [
+      "caCertificate",
+      "clientCertificate",
+      "clientPrivateKey",
+      "clientPrivateKeyPassphrase"
+    ],
+    "irodori.redis": [
+      "caCertificate",
+      "clientCertificate",
+      "clientPrivateKey"
+    ],
+    "irodori.s3-tables": [
+      "accessModel",
+      "caCertificate",
+      "catalogType",
+      "clientCertificate",
+      "clientPrivateKey",
+      "credentialVending",
+      "host",
+      "namespace",
+      "roleArn",
+      "ssoSession",
+      "tableBucketArn",
+      "webIdentityToken"
+    ],
+    "irodori.scylladb": [
+      "caCertificate",
+      "clientCertificate",
+      "clientPrivateKey"
+    ],
+    "irodori.snowflake": [
+      "caCertificate",
+      "clientCertificate",
+      "clientPrivateKey",
+      "port"
+    ],
+    "irodori.sqlserver": [
+      "clientCertificate",
+      "clientId",
+      "clientPrivateKey",
+      "clientSecret",
+      "tenantId"
+    ],
+    "irodori.trino-presto": [
+      "caCertificate",
+      "clientCertificate",
+      "clientId",
+      "clientPrivateKey",
+      "clientPrivateKeyPassphrase",
+      "clientSecret",
+      "refreshToken"
+    ]
+  }
+}
