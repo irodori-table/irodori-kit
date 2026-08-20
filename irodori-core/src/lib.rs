@@ -5,13 +5,15 @@
 //! `irodori_core::{IrodoriError, JobKind, ...}` paths keep working.
 
 pub use irodori_connection::{
-    AuthConfig, ConnectionProfile, ConnectionProfileExport, DirectTransport, LocalFileTransport,
-    PortableAuthConfig, PortableConnectionProfile, PortableProxyAuthConfig, PortableProxyChainHop,
+    AuthConfig, AwsAuthSource, AzureAuthSource, ConnectionProfile, ConnectionProfileExport,
+    DirectTransport, GcpAuthSource, JwtAlgorithm, LocalFileTransport, OAuth2Flow,
+    PortableAuthConfig, PortableAwsAuthSource, PortableAzureAuthSource, PortableConnectionProfile,
+    PortableGcpAuthSource, PortableProxyAuthConfig, PortableProxyChainHop,
     PortableProxyChainTransport, PortableProxyHopConfig, PortableProxyTransport,
-    PortableSshAuthConfig, PortableSshProxyHop, PortableSshTunnelTransport,
+    PortableSshAuthConfig, PortableSshProxyHop, PortableSshTunnelTransport, PortableTlsConfig,
     PortableTransportConfig, ProxyAuthConfig, ProxyChainHop, ProxyChainTransport, ProxyHopConfig,
     ProxyTransport, SecretRef, SecretSlot, SecretSlotPurpose, SourceFamily, SourceKind,
-    SshAuthConfig, SshProxyHop, SshTunnelTransport, TransportConfig,
+    SshAuthConfig, SshProxyHop, SshTunnelTransport, TlsConfig, TlsMode, TransportConfig,
     CONNECTION_PROFILE_SCHEMA_VERSION,
 };
 pub use irodori_error::{CommandResult, IrodoriError, IrodoriErrorKind, Result};

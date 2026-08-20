@@ -2,22 +2,24 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer};
 use ts_rs::TS;
 
 use irodori_error::{IrodoriError, Result};
 
 const MAX_PROFILE_ID_LEN: usize = 128;
 const MAX_SOURCE_ID_LEN: usize = 128;
-pub const CONNECTION_PROFILE_SCHEMA_VERSION: u16 = 1;
+pub const CONNECTION_PROFILE_SCHEMA_VERSION: u16 = 2;
+const MIN_SUPPORTED_CONNECTION_PROFILE_SCHEMA_VERSION: u16 = 1;
 
 mod portable;
 
 pub use portable::{
-    ConnectionProfileExport, PortableAuthConfig, PortableConnectionProfile,
-    PortableProxyAuthConfig, PortableProxyChainHop, PortableProxyChainTransport,
-    PortableProxyHopConfig, PortableProxyTransport, PortableSshAuthConfig, PortableSshProxyHop,
-    PortableSshTunnelTransport, PortableTransportConfig, SecretSlot, SecretSlotPurpose,
+    ConnectionProfileExport, PortableAuthConfig, PortableAwsAuthSource, PortableAzureAuthSource,
+    PortableConnectionProfile, PortableGcpAuthSource, PortableProxyAuthConfig,
+    PortableProxyChainHop, PortableProxyChainTransport, PortableProxyHopConfig,
+    PortableProxyTransport, PortableSshAuthConfig, PortableSshProxyHop, PortableSshTunnelTransport,
+    PortableTlsConfig, PortableTransportConfig, SecretSlot, SecretSlotPurpose,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -35,9 +37,21 @@ pub struct DesktopConnectionProfile<Engine> {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub user: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    /// Legacy plaintext credential accepted while saved desktop profiles migrate to `auth`.
+    ///
+    /// This field is intentionally deserialize-only so profile serialization cannot persist the
+    /// plaintext value again.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "reject_legacy_password_serialization"
+    )]
     #[ts(optional)]
     pub password: Option<String>,
+    #[serde(default, skip_serializing_if = "AuthConfig::is_none")]
+    pub auth: AuthConfig,
+    #[serde(default, skip_serializing_if = "TlsConfig::is_default")]
+    pub tls: TlsConfig,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub database: Option<String>,
@@ -60,6 +74,18 @@ fn is_false(value: &bool) -> bool {
     !*value
 }
 
+fn reject_legacy_password_serialization<S>(
+    _password: &Option<String>,
+    _serializer: S,
+) -> std::result::Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    Err(serde::ser::Error::custom(
+        "legacy plaintext password must be migrated to auth before serialization",
+    ))
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 #[ts(rename_all = "camelCase")]
@@ -76,6 +102,8 @@ pub struct ConnectionProfile {
     pub user: Option<String>,
     #[serde(default)]
     pub auth: AuthConfig,
+    #[serde(default, skip_serializing_if = "TlsConfig::is_default")]
+    pub tls: TlsConfig,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub options: BTreeMap<String, String>,
 }
@@ -87,12 +115,37 @@ impl ConnectionProfile {
         self.source.validate()?;
         self.transport.validate()?;
         self.auth.validate()?;
+        self.tls.validate()?;
+
+        if matches!(self.transport, TransportConfig::LocalFile(_))
+            && self.tls.resolve_enabled(false)
+        {
+            return Err(IrodoriError::validation(
+                "TLS cannot be enabled for a local-file transport",
+            ));
+        }
 
         validate_optional_non_empty("database", self.database.as_deref())?;
         validate_optional_non_empty("user", self.user.as_deref())?;
         validate_options(&self.options)?;
 
         Ok(())
+    }
+
+    /// Resolve the typed TLS mode against legacy transport booleans.
+    ///
+    /// `TlsMode::Default` preserves the transport's existing behavior; every
+    /// explicit profile mode overrides it.
+    pub fn transport_tls_enabled(&self) -> bool {
+        let legacy_transport_tls = match &self.transport {
+            TransportConfig::Direct(config) => config.tls,
+            TransportConfig::Socks5Proxy(config) | TransportConfig::HttpConnectProxy(config) => {
+                config.tls
+            }
+            TransportConfig::Chain(config) => config.tls,
+            TransportConfig::LocalFile(_) | TransportConfig::SshTunnel(_) => false,
+        };
+        self.tls.resolve_enabled(legacy_transport_tls)
     }
 }
 
@@ -467,7 +520,11 @@ impl SshProxyHop {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
-#[serde(tag = "kind", rename_all = "camelCase")]
+#[serde(
+    tag = "kind",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
 #[ts(rename_all = "camelCase")]
 pub enum SshAuthConfig {
     #[default]
@@ -476,6 +533,7 @@ pub enum SshAuthConfig {
         password: SecretRef,
     },
     PrivateKey {
+        #[serde(alias = "private_key")]
         private_key: SecretRef,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         #[ts(optional)]
@@ -502,19 +560,204 @@ impl SshAuthConfig {
     }
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
-#[serde(tag = "kind", rename_all = "camelCase")]
-#[ts(rename_all = "camelCase")]
-pub enum AuthConfig {
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+pub enum JwtAlgorithm {
     #[default]
-    None,
-    Secret {
-        secret: SecretRef,
+    #[serde(rename = "RS256")]
+    #[ts(rename = "RS256")]
+    Rs256,
+    #[serde(rename = "RS384")]
+    #[ts(rename = "RS384")]
+    Rs384,
+    #[serde(rename = "RS512")]
+    #[ts(rename = "RS512")]
+    Rs512,
+    #[serde(rename = "ES256")]
+    #[ts(rename = "ES256")]
+    Es256,
+    #[serde(rename = "ES384")]
+    #[ts(rename = "ES384")]
+    Es384,
+    #[serde(rename = "EdDSA")]
+    #[ts(rename = "EdDSA")]
+    EdDsa,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(rename_all = "camelCase")]
+pub enum OAuth2Flow {
+    AuthorizationCode,
+    ClientCredentials,
+    DeviceCode,
+    RefreshToken,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(
+    tag = "kind",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
+#[ts(rename_all = "camelCase")]
+pub enum AwsAuthSource {
+    Chain,
+    Static {
+        access_key_id: String,
+        secret_access_key: SecretRef,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        session_token: Option<SecretRef>,
     },
-    Token {
+    Profile {
+        profile_name: String,
+    },
+    Sso {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        profile_name: Option<String>,
+    },
+    WebIdentity {
+        role_arn: String,
         token: SecretRef,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        session_name: Option<String>,
     },
-    KeyPair {
+    AssumeRole {
+        role_arn: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        source_profile: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        external_id: Option<SecretRef>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        session_name: Option<String>,
+    },
+}
+
+impl AwsAuthSource {
+    fn validate(&self) -> Result<()> {
+        match self {
+            Self::Chain => Ok(()),
+            Self::Static {
+                access_key_id,
+                secret_access_key,
+                session_token,
+            } => {
+                validate_required("AWS access key id", access_key_id)?;
+                secret_access_key.validate("AWS secret access key handle")?;
+                validate_optional_secret("AWS session token handle", session_token)
+            }
+            Self::Profile { profile_name } => validate_required("AWS profile name", profile_name),
+            Self::Sso { profile_name } => {
+                validate_optional_non_empty("AWS SSO profile name", profile_name.as_deref())
+            }
+            Self::WebIdentity {
+                role_arn,
+                token,
+                session_name,
+            } => {
+                validate_required("AWS role ARN", role_arn)?;
+                token.validate("AWS web identity token handle")?;
+                validate_optional_non_empty("AWS role session name", session_name.as_deref())
+            }
+            Self::AssumeRole {
+                role_arn,
+                source_profile,
+                external_id,
+                session_name,
+            } => {
+                validate_required("AWS role ARN", role_arn)?;
+                validate_optional_non_empty("AWS source profile", source_profile.as_deref())?;
+                validate_optional_secret("AWS external id handle", external_id)?;
+                validate_optional_non_empty("AWS role session name", session_name.as_deref())
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(
+    tag = "kind",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
+#[ts(rename_all = "camelCase")]
+pub enum GcpAuthSource {
+    Adc,
+    ServiceAccountJson {
+        credentials: SecretRef,
+    },
+    Impersonation {
+        target_principal: String,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        delegates: Vec<String>,
+    },
+    WorkloadIdentity {
+        audience: String,
+        subject_token: SecretRef,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        service_account_impersonation_url: Option<String>,
+    },
+}
+
+impl GcpAuthSource {
+    fn validate(&self) -> Result<()> {
+        match self {
+            Self::Adc => Ok(()),
+            Self::ServiceAccountJson { credentials } => {
+                credentials.validate("GCP service account JSON handle")
+            }
+            Self::Impersonation {
+                target_principal,
+                delegates,
+            } => {
+                validate_required("GCP target principal", target_principal)?;
+                validate_string_list("GCP delegate", delegates)
+            }
+            Self::WorkloadIdentity {
+                audience,
+                subject_token,
+                service_account_impersonation_url,
+            } => {
+                validate_required("GCP workload identity audience", audience)?;
+                subject_token.validate("GCP subject token handle")?;
+                if let Some(url) = service_account_impersonation_url {
+                    validate_secure_url("GCP service account impersonation URL", url)?;
+                }
+                Ok(())
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(
+    tag = "kind",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
+#[ts(rename_all = "camelCase")]
+pub enum AzureAuthSource {
+    Cli,
+    ManagedIdentity {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        client_id: Option<String>,
+    },
+    ServicePrincipal {
+        tenant_id: String,
+        client_id: String,
+        client_secret: SecretRef,
+    },
+    ServicePrincipalCertificate {
+        tenant_id: String,
+        client_id: String,
+        certificate: SecretRef,
         private_key: SecretRef,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         #[ts(optional)]
@@ -522,23 +765,273 @@ pub enum AuthConfig {
     },
 }
 
-impl AuthConfig {
+impl AzureAuthSource {
     fn validate(&self) -> Result<()> {
         match self {
-            Self::None => Ok(()),
-            Self::Secret { secret } => secret.validate("secret handle"),
-            Self::Token { token } => token.validate("token handle"),
-            Self::KeyPair {
+            Self::Cli => Ok(()),
+            Self::ManagedIdentity { client_id } => validate_optional_non_empty(
+                "Azure managed identity client id",
+                client_id.as_deref(),
+            ),
+            Self::ServicePrincipal {
+                tenant_id,
+                client_id,
+                client_secret,
+            } => {
+                validate_required("Azure tenant id", tenant_id)?;
+                validate_required("Azure client id", client_id)?;
+                client_secret.validate("Azure client secret handle")
+            }
+            Self::ServicePrincipalCertificate {
+                tenant_id,
+                client_id,
+                certificate,
                 private_key,
                 passphrase,
             } => {
+                validate_required("Azure tenant id", tenant_id)?;
+                validate_required("Azure client id", client_id)?;
+                certificate.validate("Azure client certificate handle")?;
+                private_key.validate("Azure private key handle")?;
+                validate_optional_secret("Azure private key passphrase handle", passphrase)
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(
+    tag = "kind",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
+#[ts(rename_all = "camelCase")]
+pub enum AuthConfig {
+    #[default]
+    None,
+    #[serde(alias = "secret")]
+    Password {
+        #[serde(alias = "secret")]
+        password: SecretRef,
+    },
+    Token {
+        token: SecretRef,
+    },
+    ApiKey {
+        api_key: SecretRef,
+    },
+    #[serde(alias = "keyPair")]
+    KeyPairJwt {
+        #[serde(alias = "private_key")]
+        private_key: SecretRef,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        passphrase: Option<SecretRef>,
+        #[serde(default)]
+        algorithm: JwtAlgorithm,
+    },
+    ClientCertificate {
+        cert: SecretRef,
+        key: SecretRef,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        passphrase: Option<SecretRef>,
+    },
+    Kerberos {
+        principal: String,
+        keytab: SecretRef,
+        service_name: String,
+    },
+    #[serde(rename = "oauth2")]
+    #[ts(rename = "oauth2")]
+    OAuth2 {
+        flow: OAuth2Flow,
+        client_id: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        client_secret: Option<SecretRef>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        refresh_token: Option<SecretRef>,
+        token_endpoint: String,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        scopes: Vec<String>,
+    },
+    ExternalBrowser {
+        authorize_endpoint: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        redirect_port: Option<u16>,
+    },
+    Aws {
+        source: AwsAuthSource,
+    },
+    Gcp {
+        source: GcpAuthSource,
+    },
+    Azure {
+        source: AzureAuthSource,
+    },
+}
+
+impl AuthConfig {
+    pub fn validate(&self) -> Result<()> {
+        match self {
+            Self::None => Ok(()),
+            Self::Password { password } => password.validate("password handle"),
+            Self::Token { token } => token.validate("token handle"),
+            Self::ApiKey { api_key } => api_key.validate("API key handle"),
+            Self::KeyPairJwt {
+                private_key,
+                passphrase,
+                ..
+            } => {
                 private_key.validate("private key handle")?;
-                if let Some(passphrase) = passphrase {
-                    passphrase.validate("passphrase handle")?;
+                validate_optional_secret("passphrase handle", passphrase)
+            }
+            Self::ClientCertificate {
+                cert,
+                key,
+                passphrase,
+            } => {
+                cert.validate("client certificate handle")?;
+                key.validate("client certificate key handle")?;
+                validate_optional_secret("client certificate passphrase handle", passphrase)
+            }
+            Self::Kerberos {
+                principal,
+                keytab,
+                service_name,
+            } => {
+                validate_required("Kerberos principal", principal)?;
+                keytab.validate("Kerberos keytab handle")?;
+                validate_required("Kerberos service name", service_name)
+            }
+            Self::OAuth2 {
+                flow,
+                client_id,
+                client_secret,
+                refresh_token,
+                token_endpoint,
+                scopes,
+            } => {
+                validate_required("OAuth2 client id", client_id)?;
+                validate_optional_secret("OAuth2 client secret handle", client_secret)?;
+                validate_optional_secret("OAuth2 refresh token handle", refresh_token)?;
+                if *flow == OAuth2Flow::ClientCredentials && client_secret.is_none() {
+                    return Err(IrodoriError::validation(
+                        "OAuth2 client-credentials flow requires a client secret",
+                    ));
+                }
+                if *flow == OAuth2Flow::RefreshToken && refresh_token.is_none() {
+                    return Err(IrodoriError::validation(
+                        "OAuth2 refresh-token flow requires a refresh token",
+                    ));
+                }
+                validate_secure_url("OAuth2 token endpoint", token_endpoint)?;
+                validate_string_list("OAuth2 scope", scopes)
+            }
+            Self::ExternalBrowser {
+                authorize_endpoint,
+                redirect_port,
+            } => {
+                validate_secure_url("external browser authorize endpoint", authorize_endpoint)?;
+                if *redirect_port == Some(0) {
+                    return Err(IrodoriError::validation(
+                        "external browser redirect port must be between 1 and 65535",
+                    ));
                 }
                 Ok(())
             }
+            Self::Aws { source } => source.validate(),
+            Self::Gcp { source } => source.validate(),
+            Self::Azure { source } => source.validate(),
         }
+    }
+
+    fn is_none(&self) -> bool {
+        matches!(self, Self::None)
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(rename_all = "camelCase")]
+pub enum TlsMode {
+    #[default]
+    Default,
+    Disable,
+    Prefer,
+    Require,
+    VerifyCa,
+    VerifyFull,
+    ClientCertificate,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[ts(rename_all = "camelCase")]
+pub struct TlsConfig {
+    #[serde(default)]
+    pub mode: TlsMode,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub root_cert: Option<SecretRef>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub client_cert: Option<SecretRef>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub client_key: Option<SecretRef>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub server_name: Option<String>,
+}
+
+impl TlsConfig {
+    pub fn resolve_enabled(&self, legacy_transport_tls: bool) -> bool {
+        match self.mode {
+            TlsMode::Default => legacy_transport_tls,
+            TlsMode::Disable => false,
+            TlsMode::Prefer
+            | TlsMode::Require
+            | TlsMode::VerifyCa
+            | TlsMode::VerifyFull
+            | TlsMode::ClientCertificate => true,
+        }
+    }
+
+    pub fn validate(&self) -> Result<()> {
+        validate_optional_secret("TLS root certificate handle", &self.root_cert)?;
+        validate_optional_secret("TLS client certificate handle", &self.client_cert)?;
+        validate_optional_secret("TLS client key handle", &self.client_key)?;
+        validate_optional_non_empty("TLS server name", self.server_name.as_deref())?;
+
+        if self.client_cert.is_some() != self.client_key.is_some() {
+            return Err(IrodoriError::validation(
+                "TLS client certificate and client key must be configured together",
+            ));
+        }
+        if self.mode == TlsMode::ClientCertificate && self.client_cert.is_none() {
+            return Err(IrodoriError::validation(
+                "client-certificate TLS mode requires a client certificate and key",
+            ));
+        }
+        if matches!(self.mode, TlsMode::Default | TlsMode::Disable)
+            && (self.root_cert.is_some()
+                || self.client_cert.is_some()
+                || self.client_key.is_some()
+                || self.server_name.is_some())
+        {
+            return Err(IrodoriError::validation(
+                "TLS certificate and server-name options require an explicit enabled TLS mode",
+            ));
+        }
+        Ok(())
+    }
+
+    fn is_default(&self) -> bool {
+        self == &Self::default()
     }
 }
 
@@ -564,6 +1057,20 @@ impl SecretRef {
         validate_required(label, &self.handle)?;
         validate_optional_non_empty("secret service", self.service.as_deref())
     }
+}
+
+fn validate_optional_secret(label: &str, secret: &Option<SecretRef>) -> Result<()> {
+    if let Some(secret) = secret {
+        secret.validate(label)?;
+    }
+    Ok(())
+}
+
+fn validate_string_list(label: &str, values: &[String]) -> Result<()> {
+    for value in values {
+        validate_required(label, value)?;
+    }
+    Ok(())
 }
 
 fn validate_id(label: &str, value: &str, max_len: usize) -> Result<()> {
@@ -613,6 +1120,37 @@ fn validate_optional_non_empty(label: &str, value: Option<&str>) -> Result<()> {
     Ok(())
 }
 
+fn validate_secure_url(label: &str, value: &str) -> Result<()> {
+    validate_required(label, value)?;
+    let (secure, rest) = if let Some(rest) = value.strip_prefix("https://") {
+        (true, rest)
+    } else if let Some(rest) = value.strip_prefix("http://") {
+        (false, rest)
+    } else {
+        return Err(IrodoriError::validation(format!(
+            "{label} must be an absolute HTTPS URL"
+        )));
+    };
+    let authority = rest.split(['/', '?', '#']).next().unwrap_or_default();
+    if authority.is_empty() || authority.contains('@') {
+        return Err(IrodoriError::validation(format!(
+            "{label} must contain a valid host without embedded credentials"
+        )));
+    }
+    let loopback = authority == "localhost"
+        || authority.starts_with("localhost:")
+        || authority == "127.0.0.1"
+        || authority.starts_with("127.0.0.1:")
+        || authority == "[::1]"
+        || authority.starts_with("[::1]:");
+    if !secure && !loopback {
+        return Err(IrodoriError::validation(format!(
+            "{label} must use HTTPS except for loopback development URLs"
+        )));
+    }
+    Ok(())
+}
+
 fn default_ssh_port() -> u16 {
     22
 }
@@ -621,10 +1159,30 @@ fn validate_options(options: &BTreeMap<String, String>) -> Result<()> {
     for key in options.keys() {
         validate_required("option key", key)?;
         let normalized = key.to_ascii_lowercase().replace(['_', '-'], "");
-        if matches!(
-            normalized.as_str(),
-            "password" | "passwd" | "pwd" | "secret" | "token" | "privatekey" | "passphrase"
-        ) {
+        let secret_suffixes = [
+            "password",
+            "passwd",
+            "pwd",
+            "secret",
+            "token",
+            "apikey",
+            "privatekey",
+            "passphrase",
+            "clientcertificate",
+            "clientkey",
+            "keytab",
+            "accesskey",
+            "credential",
+            "credentials",
+            "credentialsjson",
+            "serviceaccountjson",
+            "externalid",
+            "rootcert",
+        ];
+        if secret_suffixes
+            .iter()
+            .any(|suffix| normalized.ends_with(suffix))
+        {
             return Err(IrodoriError::validation(format!(
                 "option `{key}` must be stored as a secret handle"
             )));

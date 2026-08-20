@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::process::{Command, Stdio};
 use std::sync::Mutex;
 
-use irodori_connection::SecretRef;
+use irodori_connection::{SecretRef, SecretSlot, SecretSlotPurpose};
 use irodori_error::{IrodoriError, IrodoriErrorKind, Result};
 
 pub const CRATE_NAME: &str = "irodori-secure-store";
@@ -25,6 +25,16 @@ pub trait SecureStore: Send + Sync {
         value: SecretValue<'_>,
     ) -> Result<SecretRef> {
         let handle = connection_secret_ref(connection_id, purpose)?;
+        self.put(&handle, value)?;
+        Ok(handle)
+    }
+
+    fn put_connection_slot_secret(
+        &self,
+        slot: &SecretSlot,
+        value: SecretValue<'_>,
+    ) -> Result<SecretRef> {
+        let handle = connection_secret_slot_ref(slot)?;
         self.put(&handle, value)?;
         Ok(handle)
     }
@@ -50,8 +60,28 @@ impl<'a> SecretValue<'a> {
 pub enum SecretPurpose {
     Password,
     Token,
+    ApiKey,
     PrivateKey,
     PrivateKeyPassphrase,
+    ClientCertificate,
+    ClientKey,
+    ClientCertificatePassphrase,
+    KerberosKeytab,
+    OAuthClientSecret,
+    OAuthRefreshToken,
+    AwsSecretAccessKey,
+    AwsSessionToken,
+    AwsWebIdentityToken,
+    AwsExternalId,
+    GcpServiceAccountJson,
+    GcpSubjectToken,
+    AzureClientSecret,
+    AzureClientCertificate,
+    AzurePrivateKey,
+    AzureCertificatePassphrase,
+    TlsRootCertificate,
+    TlsClientCertificate,
+    TlsClientKey,
     SshPassword,
     ProxyPassword,
 }
@@ -61,10 +91,63 @@ impl SecretPurpose {
         match self {
             Self::Password => "password",
             Self::Token => "token",
+            Self::ApiKey => "api-key",
             Self::PrivateKey => "private-key",
             Self::PrivateKeyPassphrase => "private-key-passphrase",
+            Self::ClientCertificate => "client-certificate",
+            Self::ClientKey => "client-key",
+            Self::ClientCertificatePassphrase => "client-certificate-passphrase",
+            Self::KerberosKeytab => "kerberos-keytab",
+            Self::OAuthClientSecret => "oauth-client-secret",
+            Self::OAuthRefreshToken => "oauth-refresh-token",
+            Self::AwsSecretAccessKey => "aws-secret-access-key",
+            Self::AwsSessionToken => "aws-session-token",
+            Self::AwsWebIdentityToken => "aws-web-identity-token",
+            Self::AwsExternalId => "aws-external-id",
+            Self::GcpServiceAccountJson => "gcp-service-account-json",
+            Self::GcpSubjectToken => "gcp-subject-token",
+            Self::AzureClientSecret => "azure-client-secret",
+            Self::AzureClientCertificate => "azure-client-certificate",
+            Self::AzurePrivateKey => "azure-private-key",
+            Self::AzureCertificatePassphrase => "azure-certificate-passphrase",
+            Self::TlsRootCertificate => "tls-root-certificate",
+            Self::TlsClientCertificate => "tls-client-certificate",
+            Self::TlsClientKey => "tls-client-key",
             Self::SshPassword => "ssh-password",
             Self::ProxyPassword => "proxy-password",
+        }
+    }
+}
+
+impl From<SecretSlotPurpose> for SecretPurpose {
+    fn from(purpose: SecretSlotPurpose) -> Self {
+        match purpose {
+            SecretSlotPurpose::Password => Self::Password,
+            SecretSlotPurpose::Token => Self::Token,
+            SecretSlotPurpose::ApiKey => Self::ApiKey,
+            SecretSlotPurpose::PrivateKey => Self::PrivateKey,
+            SecretSlotPurpose::Passphrase => Self::PrivateKeyPassphrase,
+            SecretSlotPurpose::ClientCertificate => Self::ClientCertificate,
+            SecretSlotPurpose::ClientKey => Self::ClientKey,
+            SecretSlotPurpose::ClientCertificatePassphrase => Self::ClientCertificatePassphrase,
+            SecretSlotPurpose::KerberosKeytab => Self::KerberosKeytab,
+            SecretSlotPurpose::OAuthClientSecret => Self::OAuthClientSecret,
+            SecretSlotPurpose::OAuthRefreshToken => Self::OAuthRefreshToken,
+            SecretSlotPurpose::AwsSecretAccessKey => Self::AwsSecretAccessKey,
+            SecretSlotPurpose::AwsSessionToken => Self::AwsSessionToken,
+            SecretSlotPurpose::AwsWebIdentityToken => Self::AwsWebIdentityToken,
+            SecretSlotPurpose::AwsExternalId => Self::AwsExternalId,
+            SecretSlotPurpose::GcpServiceAccountJson => Self::GcpServiceAccountJson,
+            SecretSlotPurpose::GcpSubjectToken => Self::GcpSubjectToken,
+            SecretSlotPurpose::AzureClientSecret => Self::AzureClientSecret,
+            SecretSlotPurpose::AzureClientCertificate => Self::AzureClientCertificate,
+            SecretSlotPurpose::AzurePrivateKey => Self::AzurePrivateKey,
+            SecretSlotPurpose::AzureCertificatePassphrase => Self::AzureCertificatePassphrase,
+            SecretSlotPurpose::TlsRootCertificate => Self::TlsRootCertificate,
+            SecretSlotPurpose::TlsClientCertificate => Self::TlsClientCertificate,
+            SecretSlotPurpose::TlsClientKey => Self::TlsClientKey,
+            SecretSlotPurpose::SshPassword => Self::SshPassword,
+            SecretSlotPurpose::ProxyPassword => Self::ProxyPassword,
         }
     }
 }
@@ -75,6 +158,40 @@ pub fn connection_secret_ref(connection_id: &str, purpose: SecretPurpose) -> Res
         handle: format!("connections/{connection_id}/{}", purpose.as_str()),
         service: Some(DEFAULT_SERVICE.to_string()),
     })
+}
+
+/// Build a collision-free handle for an import/relink slot.
+///
+/// The complete slot path is part of the handle because a profile can contain
+/// multiple secrets with the same purpose, such as SSH keys or proxy passwords
+/// for different chain hops.
+pub fn connection_secret_slot_ref(slot: &SecretSlot) -> Result<SecretRef> {
+    validate_handle_part("connection id", &slot.profile_id)?;
+    validate_handle_part("secret slot path", &slot.path)?;
+    let purpose = SecretPurpose::from(slot.purpose).as_str();
+    Ok(SecretRef {
+        handle: format!(
+            "connections/{}/slots/{purpose}/{}",
+            encode_handle_component(&slot.profile_id),
+            encode_handle_component(&slot.path),
+        ),
+        service: Some(DEFAULT_SERVICE.to_string()),
+    })
+}
+
+fn encode_handle_component(value: &str) -> String {
+    const HEX: &[u8; 16] = b"0123456789ABCDEF";
+    let mut encoded = String::with_capacity(value.len());
+    for byte in value.bytes() {
+        if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.') {
+            encoded.push(char::from(byte));
+        } else {
+            encoded.push('%');
+            encoded.push(char::from(HEX[(byte >> 4) as usize]));
+            encoded.push(char::from(HEX[(byte & 0x0f) as usize]));
+        }
+    }
+    encoded
 }
 
 #[derive(Debug, Default)]
@@ -496,6 +613,71 @@ mod tests {
         assert_eq!(reference.service.as_deref(), Some(DEFAULT_SERVICE));
         assert_eq!(reference.handle, "connections/prod/password");
         assert!(!reference.handle.contains("supersecret"));
+    }
+
+    #[test]
+    fn portable_slot_purposes_map_to_stable_store_names() {
+        assert_eq!(
+            SecretPurpose::from(SecretSlotPurpose::OAuthClientSecret).as_str(),
+            "oauth-client-secret"
+        );
+        assert_eq!(
+            SecretPurpose::from(SecretSlotPurpose::TlsClientKey).as_str(),
+            "tls-client-key"
+        );
+    }
+
+    #[test]
+    fn portable_slots_with_the_same_purpose_get_distinct_handles() {
+        let first = SecretSlot {
+            profile_id: "prod".to_string(),
+            path: "transport.chain.primary.password".to_string(),
+            purpose: SecretSlotPurpose::ProxyPassword,
+        };
+        let second = SecretSlot {
+            profile_id: "prod".to_string(),
+            path: "transport.chain.secondary.password".to_string(),
+            purpose: SecretSlotPurpose::ProxyPassword,
+        };
+
+        let first = connection_secret_slot_ref(&first).unwrap();
+        let second = connection_secret_slot_ref(&second).unwrap();
+        assert_ne!(first.handle, second.handle);
+        assert!(first.handle.ends_with("transport.chain.primary.password"));
+        assert!(second
+            .handle
+            .ends_with("transport.chain.secondary.password"));
+    }
+
+    #[test]
+    fn portable_slots_with_the_same_path_but_different_purposes_do_not_collide() {
+        let proxy = SecretSlot {
+            profile_id: "prod".to_string(),
+            path: "transport.chain.foo.ssh.password".to_string(),
+            purpose: SecretSlotPurpose::ProxyPassword,
+        };
+        let ssh = SecretSlot {
+            purpose: SecretSlotPurpose::SshPassword,
+            ..proxy.clone()
+        };
+
+        assert_ne!(
+            connection_secret_slot_ref(&proxy).unwrap().handle,
+            connection_secret_slot_ref(&ssh).unwrap().handle
+        );
+    }
+
+    #[test]
+    fn portable_slot_handle_components_are_encoded() {
+        let slot = SecretSlot {
+            profile_id: "prod/../other".to_string(),
+            path: "auth/source%token".to_string(),
+            purpose: SecretSlotPurpose::Token,
+        };
+
+        let handle = connection_secret_slot_ref(&slot).unwrap();
+        assert!(handle.handle.contains("prod%2F..%2Fother"));
+        assert!(handle.handle.ends_with("auth%2Fsource%25token"));
     }
 
     #[test]

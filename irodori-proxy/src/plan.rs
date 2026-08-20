@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 
 use irodori_connection::{
-    DirectTransport, LocalFileTransport, ProxyChainHop, ProxyChainTransport, ProxyHopConfig,
-    ProxyTransport, SshTunnelTransport, TransportConfig,
+    ConnectionProfile, DirectTransport, LocalFileTransport, ProxyChainHop, ProxyChainTransport,
+    ProxyHopConfig, ProxyTransport, SshTunnelTransport, TransportConfig,
 };
 use irodori_error::{IrodoriError, IrodoriErrorKind, Result};
 use serde::{Deserialize, Serialize};
@@ -74,6 +74,30 @@ pub struct TransportPlan {
 }
 
 impl TransportPlan {
+    /// Build a transport plan with the profile-level TLS policy applied.
+    ///
+    /// This is the preferred entry point for connection profiles. `from_config`
+    /// remains available for callers that only have a legacy transport object.
+    pub fn from_profile(profile: &ConnectionProfile) -> Result<Self> {
+        profile.validate()?;
+        let mut plan = Self::from_config(&profile.transport)?;
+        let tls = profile.transport_tls_enabled();
+
+        match &mut plan.target {
+            DialTarget::Tcp {
+                tls: target_tls, ..
+            } => *target_tls = tls,
+            DialTarget::LocalFile { .. } => return Ok(plan),
+        }
+        plan.steps
+            .retain(|step| step.kind != TransportStepKind::Tls);
+        if tls {
+            plan.steps
+                .push(step("tls handshake", TransportStepKind::Tls, None));
+        }
+        Ok(plan)
+    }
+
     pub fn from_config(config: &TransportConfig) -> Result<Self> {
         config.validate()?;
         match config {

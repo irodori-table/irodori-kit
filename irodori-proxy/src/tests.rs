@@ -1,9 +1,11 @@
 use super::*;
 use irodori_connection::{
-    ProxyAuthConfig, ProxyHopConfig, ProxyTransport, SecretRef, SshAuthConfig, SshProxyHop,
-    SshTunnelTransport, TransportConfig,
+    AuthConfig, ConnectionProfile, DirectTransport, ProxyAuthConfig, ProxyHopConfig,
+    ProxyTransport, SecretRef, SourceKind, SshAuthConfig, SshProxyHop, SshTunnelTransport,
+    TlsConfig, TlsMode, TransportConfig,
 };
 use irodori_error::IrodoriErrorKind;
+use std::collections::BTreeMap;
 use std::io::{Read, Write};
 use std::net::TcpListener;
 use std::time::Duration;
@@ -49,6 +51,47 @@ fn single_proxy_plan_requires_target_and_marks_proxy_auth() {
         .iter()
         .any(|step| step.kind == TransportStepKind::HttpConnectProxy));
     assert!(plan.steps.iter().any(|step| step.name == "proxy auth"));
+}
+
+#[test]
+fn profile_tls_mode_overrides_the_legacy_transport_flag() {
+    let mut profile = ConnectionProfile {
+        id: "prod".to_string(),
+        display_name: "Production".to_string(),
+        source: SourceKind::postgresql(),
+        transport: TransportConfig::Direct(DirectTransport {
+            host: "db.internal".to_string(),
+            port: Some(5432),
+            tls: true,
+        }),
+        database: None,
+        user: None,
+        auth: AuthConfig::None,
+        tls: TlsConfig {
+            mode: TlsMode::Disable,
+            ..TlsConfig::default()
+        },
+        options: BTreeMap::new(),
+    };
+
+    let disabled = TransportPlan::from_profile(&profile).unwrap();
+    assert_eq!(disabled.target, DialTarget::tcp("db.internal", 5432, false));
+    assert!(!disabled
+        .steps
+        .iter()
+        .any(|step| step.kind == TransportStepKind::Tls));
+
+    profile.tls.mode = TlsMode::Require;
+    let required = TransportPlan::from_profile(&profile).unwrap();
+    assert_eq!(required.target, DialTarget::tcp("db.internal", 5432, true));
+    assert_eq!(
+        required
+            .steps
+            .iter()
+            .filter(|step| step.kind == TransportStepKind::Tls)
+            .count(),
+        1
+    );
 }
 
 #[test]
