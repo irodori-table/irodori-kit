@@ -119,8 +119,7 @@
     "irodori.dynamodb": [
       "caCertificate",
       "clientCertificate",
-      "clientPrivateKey",
-      "host"
+      "clientPrivateKey"
     ],
     "irodori.elasticsearch": [
       "caCertificate",

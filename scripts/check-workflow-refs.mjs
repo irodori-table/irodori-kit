@@ -20,22 +20,20 @@
  * be updated in step with it, and nothing checked.
  */
 import { readFileSync, readdirSync } from "node:fs";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
+import { KIT_OWNER, KIT_REPO, KIT_ROOT, readWorkspaceTag } from "./lib/kit.mjs";
+import { bullets, reporter } from "./lib/report.mjs";
 
-const HERE = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(HERE, "..");
-const OWNER = "irodori-table";
+const report = reporter("check-workflow-refs");
 
-const cargo = readFileSync(join(ROOT, "Cargo.toml"), "utf8");
-const version = cargo.match(/^\[workspace\.package\][\s\S]*?^version = "([^"]+)"/m)?.[1];
-if (!version) {
-  console.error("check-workflow-refs: no [workspace.package] version in Cargo.toml");
-  process.exit(1);
+let expected;
+try {
+  expected = readWorkspaceTag();
+} catch (error) {
+  report.fail(error instanceof Error ? error.message : String(error));
 }
-const expected = `v${version}`;
 
-const dir = join(ROOT, ".github", "workflows");
+const dir = join(KIT_ROOT, ".github", "workflows");
 const problems = [];
 
 for (const name of readdirSync(dir).filter((f) => f.endsWith(".yml"))) {
@@ -44,17 +42,19 @@ for (const name of readdirSync(dir).filter((f) => f.endsWith(".yml"))) {
     const where = `${name}:${index + 1}`;
 
     // Any reference to this repository must name the current owner.
-    const owner = line.match(/([A-Za-z0-9_-]+)\/irodori-kit/);
-    if (owner && owner[1] !== OWNER) {
+    const owner = line.match(new RegExp(`([A-Za-z0-9_-]+)\\/${KIT_REPO}`));
+    if (owner && owner[1] !== KIT_OWNER) {
       problems.push(
-        `${where}: references ${owner[1]}/irodori-kit — a reusable workflow ` +
+        `${where}: references ${owner[1]}/${KIT_REPO} — a reusable workflow ` +
           `reference does not follow a repository transfer, so this cannot resolve`,
       );
     }
 
     // A reusable workflow calling into this repository, or checking it out,
     // must use the version being released.
-    const usesTag = line.match(/irodori-kit\/\.github\/workflows\/[\w-]+\.yml@(v[\d.]+)/);
+    const usesTag = line.match(
+      new RegExp(`${KIT_REPO}\\/\\.github\\/workflows\\/[\\w-]+\\.yml@(v[\\d.]+)`),
+    );
     if (usesTag && usesTag[1] !== expected) {
       problems.push(`${where}: calls ${usesTag[1]} but this tree is ${expected}`);
     }
@@ -66,14 +66,14 @@ for (const name of readdirSync(dir).filter((f) => f.endsWith(".yml"))) {
 }
 
 if (problems.length > 0) {
-  console.error("check-workflow-refs: workflow self-references are out of step\n");
-  problems.forEach((p) => console.error(`  ${p}`));
+  console.error(`${report.prefix}: workflow self-references are out of step\n`);
+  console.error(bullets(problems));
   console.error(
-    `\nEvery self-reference must be ${expected} and owned by ${OWNER}. A tag that ` +
+    `\nEvery self-reference must be ${expected} and owned by ${KIT_OWNER}. A tag that ` +
       `ships a workflow pointing at an older tag of itself breaks every consumer ` +
       `that adopts it, and does so only once they adopt it.`,
   );
   process.exit(1);
 }
 
-console.log(`check-workflow-refs: ok (${expected}, owner ${OWNER})`);
+report.ok(`ok (${expected}, owner ${KIT_OWNER})`);

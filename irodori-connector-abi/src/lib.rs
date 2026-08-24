@@ -15,12 +15,16 @@ pub struct IrodoriConnectorBuffer {
     pub len: usize,
 }
 
+mod encoding;
 mod request;
+mod tls;
 
+pub use encoding::{hex_encode, percent_encode};
 pub use request::{
-    collect_url_auth, option_bool, option_string, percent_encode, push_sensitive, redact,
+    collect_url_auth, option_bool, option_string, push_sensitive, redact, redact_endpoint,
     request_containers,
 };
+pub use tls::read_pem;
 
 pub fn owned_buffer(value: String) -> IrodoriConnectorBuffer {
     let mut bytes = value.into_bytes().into_boxed_slice();

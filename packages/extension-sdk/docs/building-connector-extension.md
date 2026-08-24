@@ -52,7 +52,7 @@ Native connector crates should depend on `irodori-connector-abi` by git tag:
 
 ```toml
 [dependencies]
-irodori-connector-abi = { git = "https://github.com/irodori-table/irodori-kit", tag = "v0.9.0" }
+irodori-connector-abi = { git = "https://github.com/irodori-table/irodori-kit", tag = "v0.9.1" }
 serde_json = "1"
 ```
 

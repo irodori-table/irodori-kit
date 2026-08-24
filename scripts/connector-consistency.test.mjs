@@ -1,6 +1,17 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
+import { openConnector } from "./lib/connector-target.mjs";
+import { baselineEntries, ratchetSummary } from "./lib/ratchet.mjs";
+import { reporter } from "./lib/report.mjs";
 import { analyzeAuthMethods } from "./lib/connector-auth-evidence.mjs";
 import {
   analyzeConnectorFields,
@@ -167,4 +178,61 @@ test("connector baselines are sorted and contain no duplicate entries", () => {
       );
     }
   }
+});
+
+test("the shared ratchet summary reads the same for auth methods and fields", () => {
+  assert.equal(
+    ratchetSummary({
+      extensionId: "irodori.test",
+      declared: 2,
+      gaps: [],
+      whole: "methods have an implementation",
+      each: "implemented",
+    }),
+    "irodori.test — all 2 declared methods have an implementation",
+  );
+  assert.equal(
+    ratchetSummary({
+      extensionId: "irodori.test",
+      declared: 14,
+      gaps: ["caCertificate", "clientCertificate"],
+      whole: "bindings are read",
+      each: "read",
+    }),
+    "irodori.test — 12/14 read, 2 known gap(s) in the baseline: " +
+      "caCertificate, clientCertificate",
+  );
+});
+
+test("baseline entries are read per connector and default to no debt", () => {
+  const baseline = { connectors: { "irodori.test": ["host"] } };
+  assert.deepEqual(baselineEntries(baseline, "irodori.test"), ["host"]);
+  assert.deepEqual(baselineEntries(baseline, "irodori.absent"), []);
+  assert.deepEqual(baselineEntries({}, "irodori.test"), []);
+});
+
+test("opening a connector reports the manifest, not the caller's assumptions", () => {
+  const root = mkdtempSync(join(tmpdir(), "irodori-connector-"));
+  const report = reporter("test");
+
+  assert.equal(openConnector(root, report), null);
+
+  writeFileSync(
+    join(root, "connector.config.json"),
+    JSON.stringify({
+      extensionId: "irodori.test",
+      connector: { connection: { authMethods: [{ id: "basic", fields: [] }] } },
+    }),
+  );
+  const connector = openConnector(root, report);
+  assert.equal(connector.extensionId, "irodori.test");
+  assert.equal(connector.hasDriver, false);
+  assert.deepEqual(connector.connection.authMethods, [{ id: "basic", fields: [] }]);
+
+  mkdirSync(join(root, "src"));
+  writeFileSync(join(root, "src", "driver.rs"), 'option_string(request, &["host"]);\n');
+  assert.equal(openConnector(root, report).hasDriver, true);
+  assert.match(openConnector(root, report).source(), /"host"/);
+
+  rmSync(root, { recursive: true, force: true });
 });

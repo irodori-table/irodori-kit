@@ -1,12 +1,18 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  auditFleet,
   inspectConnector,
   inspectFleet,
+  readInventory,
+} from "./check-fleet-dependencies.mjs";
+import {
+  inventoryBreakdown,
+  mergeInventories,
   parseConnectorInventory,
   rawRepositoryFileUrl,
-  workspaceTag,
-} from "./check-fleet-dependencies.mjs";
+} from "./lib/connector-registry.mjs";
+import { workspaceTag } from "./lib/kit.mjs";
 
 function fixture(tag = "v0.8.4") {
   return {
@@ -184,4 +190,113 @@ test("raw URLs encode repository refs and nested paths", () => {
     ),
     "https://raw.githubusercontent.com/irodori-table/irodori-extension-alpha/release%2Ftest/.github/workflows/ci.yml",
   );
+});
+
+function inventoryFor(...names) {
+  return JSON.stringify({
+    owner: "irodori-table",
+    repositories: names.map((name) => ({ name })),
+  });
+}
+
+test("registries merge into one fleet, tagged by product line", () => {
+  const inventory = mergeInventories([
+    { line: "core", inventory: parseConnectorInventory(inventoryFor("irodori-extension-alpha")) },
+    {
+      line: "lakehouse",
+      inventory: parseConnectorInventory(
+        inventoryFor("irodori-extension-beta", "irodori-extension-gamma"),
+      ),
+    },
+  ]);
+  assert.deepEqual(inventory, {
+    owner: "irodori-table",
+    lines: ["core", "lakehouse"],
+    repositories: [
+      { name: "irodori-extension-alpha", line: "core" },
+      { name: "irodori-extension-beta", line: "lakehouse" },
+      { name: "irodori-extension-gamma", line: "lakehouse" },
+    ],
+  });
+  assert.equal(inventoryBreakdown(inventory), "core 1, lakehouse 2");
+});
+
+test("a repository claimed by two registries is an error, not a double audit", () => {
+  assert.throws(
+    () =>
+      mergeInventories([
+        { line: "core", inventory: parseConnectorInventory(inventoryFor("irodori-extension-alpha")) },
+        {
+          line: "lakehouse",
+          inventory: parseConnectorInventory(inventoryFor("irodori-extension-alpha")),
+        },
+      ]),
+    /irodori-extension-alpha is listed by both the core and lakehouse registries/,
+  );
+  assert.throws(() => mergeInventories([]), /no connector registries were read/);
+});
+
+test("an unreadable registry fails the audit instead of shrinking the fleet", async () => {
+  const registries = [
+    { line: "core", url: "registry://core" },
+    { line: "lakehouse", url: "registry://lakehouse" },
+  ];
+  const files = fixture("v0.9.0");
+  async function readText(url) {
+    if (url === "registry://core") {
+      return inventoryFor("irodori-extension-alpha");
+    }
+    if (url === "registry://lakehouse") {
+      throw new Error("HTTP 404");
+    }
+    return files[
+      {
+        "Cargo.toml": "cargoToml",
+        "Cargo.lock": "cargoLock",
+        ".github/workflows/ci.yml": "ciWorkflow",
+        ".github/workflows/release.yml": "releaseWorkflow",
+      }[url.split("/main/")[1]]
+    ];
+  }
+
+  await assert.rejects(
+    auditFleet({ readText, registries, expectedTag: "v0.9.0" }),
+    /lakehouse registry \(registry:\/\/lakehouse\): HTTP 404/,
+  );
+
+  // The core line alone still audits clean — which is exactly why a silently
+  // dropped registry read as a healthy fleet before.
+  const inventory = await readInventory(readText, registries.slice(0, 1));
+  assert.deepEqual(inventory.repositories, [
+    { name: "irodori-extension-alpha", line: "core" },
+  ]);
+});
+
+test("a fleet audit spanning both lines reports one tag", async () => {
+  const files = fixture("v0.9.0");
+  const registries = [
+    { line: "core", url: "registry://core" },
+    { line: "lakehouse", url: "registry://lakehouse" },
+  ];
+  const paths = {
+    "Cargo.toml": "cargoToml",
+    "Cargo.lock": "cargoLock",
+    ".github/workflows/ci.yml": "ciWorkflow",
+    ".github/workflows/release.yml": "releaseWorkflow",
+  };
+  async function readText(url) {
+    if (url === "registry://core") return inventoryFor("irodori-extension-alpha");
+    if (url === "registry://lakehouse") return inventoryFor("irodori-extension-iceberg");
+    return files[paths[url.split("/main/")[1]]];
+  }
+
+  const { inventory, report } = await auditFleet({
+    readText,
+    registries,
+    expectedTag: "v0.9.0",
+  });
+  assert.deepEqual(report.errors, []);
+  assert.equal(report.tag, "v0.9.0");
+  assert.equal(inventory.repositories.length, 2);
+  assert.equal(inventoryBreakdown(inventory), "core 1, lakehouse 1");
 });

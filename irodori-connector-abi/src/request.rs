@@ -137,23 +137,25 @@ pub fn redact(message: &str, values: &[String]) -> String {
     })
 }
 
-/// Percent-encode everything outside the RFC 3986 unreserved set.
+/// Replace a connector's endpoint with a stable placeholder, then every secret.
 ///
-/// Deliberately conservative. Over-encoding a path or a username is harmless;
-/// under-encoding a client secret in a form body lets it introduce another
-/// parameter, and under-encoding a password in a URI makes the client parse a
-/// different host.
-pub fn percent_encode(value: &str) -> String {
-    let mut out = String::with_capacity(value.len());
-    for byte in value.bytes() {
-        match byte {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
-                out.push(byte as char)
-            }
-            _ => out.push_str(&format!("%{byte:02X}")),
-        }
-    }
-    out
+/// Thirty-three connectors wrote this pair by hand, each folding over its own
+/// redaction list around a `message.replace(&self.url, "<engine-url>")`. An
+/// empty endpoint is skipped for the same reason an empty secret is: replacing
+/// an empty needle inserts the placeholder between every character, and a
+/// connector that failed before it resolved its endpoint holds exactly that.
+pub fn redact_endpoint(
+    message: &str,
+    endpoint: &str,
+    placeholder: &str,
+    values: &[String],
+) -> String {
+    let message = if endpoint.is_empty() {
+        message.to_string()
+    } else {
+        message.replace(endpoint, placeholder)
+    };
+    redact(&message, values)
 }
 
 #[cfg(test)]
@@ -284,17 +286,35 @@ mod tests {
     }
 
     #[test]
+    fn an_endpoint_becomes_a_placeholder_before_secrets_are_removed() {
+        let values = vec!["hunter2".to_string()];
+        assert_eq!(
+            redact_endpoint(
+                "GET https://db.example:8123/ping failed for hunter2",
+                "https://db.example:8123",
+                "<clickhouse-url>",
+                &values,
+            ),
+            "GET <clickhouse-url>/ping failed for ****",
+        );
+    }
+
+    #[test]
+    fn an_unresolved_endpoint_leaves_the_message_readable() {
+        // Regression: a connector that fails before it builds its URL holds an
+        // empty endpoint, and replacing an empty needle inserts the
+        // placeholder between every character of the message.
+        assert_eq!(
+            redact_endpoint("connect failed", "", "<url>", &[]),
+            "connect failed"
+        );
+    }
+
+    #[test]
     fn a_url_without_credentials_collects_nothing() {
         let mut values = Vec::new();
         collect_url_auth("http://db.example:8123/", &mut values);
         collect_url_auth("not a url", &mut values);
         assert!(values.is_empty());
-    }
-
-    #[test]
-    fn percent_encoding_covers_what_would_change_meaning() {
-        assert_eq!(percent_encode("p@ss:word/1"), "p%40ss%3Aword%2F1");
-        assert_eq!(percent_encode("a&b=c"), "a%26b%3Dc");
-        assert_eq!(percent_encode("plain-Token_1.0~"), "plain-Token_1.0~");
     }
 }

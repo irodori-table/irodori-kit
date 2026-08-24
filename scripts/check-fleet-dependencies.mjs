@@ -2,19 +2,24 @@
 /**
  * Check that every connector repository follows one irodori-kit baseline.
  *
- * The live command reads the connector inventory and repository files from
+ * The live command reads the connector registries and repository files from
  * raw.githubusercontent.com. Parsing and comparison are kept in pure exported
  * functions so the policy can be tested without network access.
  */
 import { fileURLToPath } from "node:url";
-import { readFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { resolve } from "node:path";
+import {
+  EXPECTED_OWNER,
+  REGISTRIES,
+  inventoryBreakdown,
+  mergeInventories,
+  parseConnectorInventory,
+  rawRepositoryFileUrl,
+} from "./lib/connector-registry.mjs";
+import { KIT_GIT_URL, readWorkspaceTag } from "./lib/kit.mjs";
+import { reporter } from "./lib/report.mjs";
 
-export const REGISTRY_URL =
-  "https://raw.githubusercontent.com/irodori-table/irodori-table/main/registry/catalog/connector-repositories.json";
-export const EXPECTED_OWNER = "irodori-table";
-
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const report = reporter("fleet-dependencies");
 
 const CONNECTOR_PATHS = Object.freeze({
   cargoToml: "Cargo.toml",
@@ -24,47 +29,6 @@ const CONNECTOR_PATHS = Object.freeze({
 });
 
 const OLD_OWNER = /github\.com\/hjosugi\//gi;
-
-export function parseConnectorInventory(text) {
-  const inventory = JSON.parse(text);
-  if (!inventory || typeof inventory !== "object" || Array.isArray(inventory)) {
-    throw new Error("connector inventory must be a JSON object");
-  }
-  if (inventory.owner !== EXPECTED_OWNER) {
-    throw new Error(
-      `connector inventory owner must be ${EXPECTED_OWNER}, found ${String(inventory.owner)}`,
-    );
-  }
-  if (
-    !Array.isArray(inventory.repositories) ||
-    inventory.repositories.length === 0
-  ) {
-    throw new Error("connector inventory must contain at least one repository");
-  }
-
-  const names = inventory.repositories.map((entry) => entry?.name);
-  const invalid = names.filter(
-    (name) =>
-      typeof name !== "string" ||
-      !/^irodori-extension-[a-z0-9-]+$/.test(name),
-  );
-  if (invalid.length > 0) {
-    throw new Error(
-      `connector inventory contains invalid repository names: ${invalid.join(", ")}`,
-    );
-  }
-  const duplicates = names.filter((name, index) => names.indexOf(name) !== index);
-  if (duplicates.length > 0) {
-    throw new Error(
-      `connector inventory contains duplicate repositories: ${[...new Set(duplicates)].join(", ")}`,
-    );
-  }
-
-  return {
-    owner: inventory.owner,
-    repositories: names.map((name) => ({ name })),
-  };
-}
 
 function oldOwnerReferences(text) {
   return [...text.matchAll(OLD_OWNER)].length;
@@ -109,16 +73,6 @@ function workflowReferences(text, workflow) {
   ].map((match) => ({ owner: match[1], tag: match[2] }));
 }
 
-export function workspaceTag(text) {
-  const version = text.match(
-    /^\[workspace\.package\][\s\S]*?^version\s*=\s*"([^"]+)"/m,
-  )?.[1];
-  if (!version) {
-    throw new Error("workspace Cargo.toml has no [workspace.package] version");
-  }
-  return `v${version}`;
-}
-
 export function inspectConnector(repository, files) {
   const errors = [];
   const required = Object.keys(CONNECTOR_PATHS);
@@ -146,7 +100,7 @@ export function inspectConnector(repository, files) {
       `${repository}: Cargo.toml has no inline irodori-connector-abi dependency`,
     );
   } else {
-    if (cargo.git !== `https://github.com/${EXPECTED_OWNER}/irodori-kit`) {
+    if (cargo.git !== KIT_GIT_URL) {
       errors.push(
         `${repository}: Cargo.toml irodori-connector-abi git URL is ${String(cargo.git)}`,
       );
@@ -167,11 +121,7 @@ export function inspectConnector(repository, files) {
       );
     }
     for (const dependency of locked) {
-      if (
-        !dependency.source?.startsWith(
-          `git+https://github.com/${EXPECTED_OWNER}/irodori-kit?tag=`,
-        )
-      ) {
+      if (!dependency.source?.startsWith(`git+${KIT_GIT_URL}?tag=`)) {
         errors.push(
           `${repository}: Cargo.lock irodori-connector-abi source is ${String(dependency.source)}`,
         );
@@ -243,14 +193,6 @@ export function inspectFleet(inventory, filesByRepository, expectedTag = null) {
   return { tag: tags.length === 1 ? tags[0] : null, results, errors };
 }
 
-export function rawRepositoryFileUrl(owner, repository, path, ref = "main") {
-  const encodedPath = path.split("/").map(encodeURIComponent).join("/");
-  return (
-    `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/` +
-    `${encodeURIComponent(repository)}/${encodeURIComponent(ref)}/${encodedPath}`
-  );
-}
-
 async function fetchText(url) {
   const response = await fetch(url, {
     headers: { "user-agent": "irodori-kit-fleet-consistency" },
@@ -274,12 +216,28 @@ async function mapWithConcurrency(items, limit, task) {
   return results;
 }
 
+/** Read every registry, and fail the audit rather than silently cover fewer repositories. */
+export async function readInventory(readText, registries = REGISTRIES) {
+  const parts = await Promise.all(
+    registries.map(async ({ line, url }) => {
+      try {
+        return { line, inventory: parseConnectorInventory(await readText(url)) };
+      } catch (error) {
+        throw new Error(
+          `${line} registry (${url}): ${error instanceof Error ? error.message : error}`,
+        );
+      }
+    }),
+  );
+  return mergeInventories(parts);
+}
+
 export async function auditFleet({
   readText = fetchText,
-  registryUrl = REGISTRY_URL,
-  expectedTag = workspaceTag(readFileSync(join(ROOT, "Cargo.toml"), "utf8")),
+  registries = REGISTRIES,
+  expectedTag = readWorkspaceTag(),
 } = {}) {
-  const inventory = parseConnectorInventory(await readText(registryUrl));
+  const inventory = await readInventory(readText, registries);
   const entries = await mapWithConcurrency(
     inventory.repositories,
     6,
@@ -300,15 +258,16 @@ export async function auditFleet({
 }
 
 async function main() {
-  const { inventory, report } = await auditFleet();
-  if (report.errors.length > 0) {
-    console.error("fleet-dependencies: inconsistent connector fleet\n");
-    report.errors.forEach((error) => console.error(`  - ${error}`));
+  const { inventory, report: audit } = await auditFleet();
+  if (audit.errors.length > 0) {
+    console.error(`${report.prefix}: inconsistent connector fleet\n`);
+    audit.errors.forEach((error) => console.error(`  - ${error}`));
     process.exitCode = 1;
     return;
   }
-  console.log(
-    `fleet-dependencies: ok (${inventory.repositories.length} repositories, ${report.tag})`,
+  report.ok(
+    `ok (${inventory.repositories.length} repositories — ` +
+      `${inventoryBreakdown(inventory)} — on ${audit.tag})`,
   );
 }
 
@@ -316,7 +275,7 @@ const invokedPath = process.argv[1] ? resolve(process.argv[1]) : null;
 if (invokedPath === fileURLToPath(import.meta.url)) {
   main().catch((error) => {
     console.error(
-      `fleet-dependencies: ${error instanceof Error ? error.message : error}`,
+      `${report.prefix}: ${error instanceof Error ? error.message : error}`,
     );
     process.exitCode = 1;
   });
