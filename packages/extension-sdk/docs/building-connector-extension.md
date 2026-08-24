@@ -140,6 +140,12 @@ repository:
 - `registry/catalog/catalog.json`
 - `registry/catalog/connector-repositories.json`
 
+The catalog lives with the product line, not in one place: core connectors are
+listed in `irodori-table`, lakehouse connectors in `irodori-lakehouse`. Add a
+new connector to the catalog of the line it belongs to. The daily
+`Fleet dependency consistency` workflow in `irodori-kit` reads every line's
+catalog, so a connector missing from all of them is audited by nothing.
+
 Release archives must contain the manifest, connector config, and native module
 under the paths declared by the manifest and connector config.
 

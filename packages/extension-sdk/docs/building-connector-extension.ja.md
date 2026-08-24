@@ -127,6 +127,12 @@ irodori-connector-abi = { path = "../irodori-kit/irodori-connector-abi" }
 - `registry/catalog/catalog.json`
 - `registry/catalog/connector-repositories.json`
 
+カタログは一箇所ではなく製品ラインごとに存在します。コアコネクターは
+`irodori-table`、レイクハウスコネクターは`irodori-lakehouse`に記載します。新しい
+コネクターは、それが属するラインのカタログに追加してください。`irodori-kit`の日次
+`Fleet dependency consistency`ワークフローは全ラインのカタログを読むため、どのカタログ
+にも載っていないコネクターはどこからも監査されません。
+
 リリースアーカイブはマニフェストとコネクター設定、ネイティブモジュールをマニフェストとコネクター設定で宣言されたパスの下に含める必要があります。
 
 公式リポジトリはCI呼び出し元と同じ固定された`irodori-kit`タグの再利用可能な`extension-release.yml`ワークフローを使用します。`v<manifest.version>`タグは6つのサポートされるGitHubホストランナーターゲットでネイティブアーカイブをビルドします:
