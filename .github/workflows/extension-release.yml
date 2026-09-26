@@ -141,15 +141,23 @@ jobs:
           version=$(jq -r .version irodori.extension.json)
           test "${RELEASE_TAG}" = "v${version}"
 
-      - name: Create or update GitHub Release
+      - name: Publish release (draft, attach, then publish)
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if ! gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
-            gh release create "${RELEASE_TAG}" --verify-tag --generate-notes --title "${GITHUB_REPOSITORY#*/} ${RELEASE_TAG}"
+          # Retagging would make the catalog's recorded digest point at different
+          # bytes. Bump the version instead.
+          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
+            echo "release ${RELEASE_TAG} already exists; bump the version instead of retagging" >&2
+            exit 1
           fi
-          gh release upload "${RELEASE_TAG}" dist/*.tar.gz --clobber
+          # Assets cannot be attached after publish once immutable releases are
+          # enabled, so create a draft, attach every archive, then publish.
+          gh release create "${RELEASE_TAG}" --verify-tag --draft --generate-notes \
+            --title "${GITHUB_REPOSITORY#*/} ${RELEASE_TAG}"
+          gh release upload "${RELEASE_TAG}" dist/*.tar.gz
+          gh release edit "${RELEASE_TAG}" --draft=false
 
       - name: Dispatch extension catalog sync
         if: ${{ env.CATALOG_TOKEN != '' }}
