@@ -29,8 +29,7 @@
     "irodori.cloud-spanner": [],
     "irodori.couchbase": [
       "ldap",
-      "oidc",
-      "saml"
+      "oidc"
     ],
     "irodori.databricks": [
       "databricksAzureManagedIdentity",
@@ -100,10 +99,6 @@
       "awsSso",
       "webIdentity"
     ],
-    "irodori.motherduck": [
-      "browserSso",
-      "oauth2"
-    ],
     "irodori.neo4j": [
       "bearerToken",
       "kerberos"
@@ -133,10 +128,7 @@
       "saslScram"
     ],
     "irodori.snowflake": [
-      "browserSso",
-      "externalBrowser",
       "oauth2",
-      "saml",
       "snowflakeKeyPair",
       "snowflakeWorkloadIdentity"
     ],
