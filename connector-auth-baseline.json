@@ -98,7 +98,6 @@
       "awsDefaultCredentialsChain",
       "awsIam",
       "awsSso",
-      "kerberos",
       "webIdentity"
     ],
     "irodori.motherduck": [
