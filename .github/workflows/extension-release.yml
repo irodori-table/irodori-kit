@@ -164,9 +164,16 @@ jobs:
       - name: Download target archives
         uses: actions/download-artifact@v6
         with:
-          pattern: extension-*
+          # Exclude the validation job's generic extension-package artifact.
+          pattern: extension-*-*
           path: dist
           merge-multiple: true
+
+      - name: Create the legacy Linux archive alias
+        shell: bash
+        run: |
+          name="${GITHUB_REPOSITORY#*/}"
+          cp "dist/${name}-x86_64-linux.tar.gz" "dist/${name}.tar.gz"
 
       - name: Verify tag matches manifest version
         shell: bash
