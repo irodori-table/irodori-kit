@@ -290,10 +290,7 @@
     ],
     "irodori.sqlserver": [
       "clientCertificate",
-      "clientId",
-      "clientPrivateKey",
-      "clientSecret",
-      "tenantId"
+      "clientPrivateKey"
     ],
     "irodori.trino-presto": [
       "caCertificate",
