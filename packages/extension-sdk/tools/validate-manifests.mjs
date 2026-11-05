@@ -23,6 +23,7 @@ const contributionShapes = {
   themes: defs.themeContribution,
   sqlDialects: defs.sqlDialectContribution,
   connectors: defs.connectorContribution,
+  tools: defs.toolContribution,
 };
 const capabilityShapes = {
   wasmModules: defs.wasmModule,
@@ -38,6 +39,7 @@ const contributionPermissionRules = [
   ["themes", "themes"],
   ["sqlDialects", "sqlDialects"],
   ["connectors", "connectors"],
+  ["tools", "tools"],
 ];
 const capabilityPermissionRules = [
   ["wasmModules", "wasm"],
