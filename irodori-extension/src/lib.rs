@@ -58,6 +58,7 @@ pub enum PermissionScope {
     #[serde(rename = "connectors")]
     #[ts(rename = "connectors")]
     Connectors,
+    Tools,
     #[serde(rename = "queries:run")]
     #[ts(rename = "queries:run")]
     QueriesRun,
@@ -156,6 +157,89 @@ pub struct ExtensionContributions {
     pub sql_dialects: Vec<SqlDialectContribution>,
     #[serde(default)]
     pub connectors: Vec<ConnectorContribution>,
+    #[serde(default)]
+    pub tools: Vec<ToolContribution>,
+}
+
+/// Text for each locale the extension ships. `en` is the required fallback.
+pub type LocalizedText = BTreeMap<String, String>;
+
+/// A dialog the host renders from this description, for a native module.
+///
+/// The extension supplies the form and answers `tool.run` calls with the output
+/// to show, so its code never runs in the application webview.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[ts(rename_all = "camelCase")]
+pub struct ToolContribution {
+    pub id: String,
+    pub title: LocalizedText,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub shortcut: Option<String>,
+    pub form: ToolForm,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[ts(rename_all = "camelCase")]
+pub struct ToolForm {
+    pub sections: Vec<ToolFormSection>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[ts(rename_all = "camelCase")]
+pub struct ToolFormSection {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub columns: Option<u8>,
+    pub fields: Vec<ToolFormField>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[ts(rename_all = "camelCase")]
+pub struct ToolFormField {
+    pub id: String,
+    pub label: LocalizedText,
+    #[serde(rename = "type")]
+    #[ts(rename = "type")]
+    pub field_type: ToolFormFieldType,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "JsonValue")]
+    pub default: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub options: Vec<ToolFormOption>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub min: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub max: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub step: Option<f64>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(rename_all = "camelCase")]
+pub enum ToolFormFieldType {
+    String,
+    Number,
+    Boolean,
+    Select,
+    /// Several lines of text, such as a list of column names.
+    Lines,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[ts(rename_all = "camelCase")]
+pub struct ToolFormOption {
+    pub value: String,
+    pub label: LocalizedText,
 }
 
 /// A feature implemented by the trusted desktop host and activated by an
@@ -965,6 +1049,52 @@ mod tests {
     use serde_json::json;
 
     #[test]
+    fn a_tool_contribution_round_trips() {
+        let tool = json!({
+            "id": "demo.tool",
+            "title": { "en": "Demo", "ja": "デモ" },
+            "shortcut": "Mod+Shift+M",
+            "form": { "sections": [{
+                "columns": 2,
+                "fields": [{
+                    "id": "source",
+                    "label": { "en": "Source" },
+                    "type": "select",
+                    "default": "a",
+                    "options": [{ "value": "a", "label": { "en": "A" } }]
+                }, {
+                    "id": "limit",
+                    "label": { "en": "Limit" },
+                    "type": "number",
+                    "default": 10,
+                    "min": 1.0,
+                    "max": 100.0
+                }]
+            }] }
+        });
+
+        let parsed: ToolContribution = serde_json::from_value(tool.clone()).unwrap();
+
+        assert_eq!(
+            parsed.form.sections[0].fields[0].field_type,
+            ToolFormFieldType::Select
+        );
+        assert_eq!(serde_json::to_value(&parsed).unwrap(), tool);
+    }
+
+    #[test]
+    fn a_tool_contribution_rejects_unknown_keys() {
+        let result = serde_json::from_value::<ToolContribution>(json!({
+            "id": "demo.tool",
+            "title": { "en": "Demo" },
+            "form": { "sections": [] },
+            "script": "alert(1)"
+        }));
+
+        assert!(result.is_err());
+    }
+
+    #[test]
     fn manifest_serializes_with_camel_case_fields() {
         let manifest = ExtensionManifest {
             manifest_version: CURRENT_MANIFEST_VERSION,
@@ -1018,7 +1148,8 @@ mod tests {
                     "statusBarItems": [],
                     "themes": [],
                     "sqlDialects": [],
-                    "connectors": []
+                    "connectors": [],
+                    "tools": []
                 },
                 "capabilities": {
                     "wasmModules": [],
@@ -1093,6 +1224,12 @@ mod typegen {
             .decl(&decl::<ExtensionManifest>())
             .decl(&decl::<ExtensionContributions>())
             .decl(&decl::<HostFeature>())
+            .decl(&decl::<ToolContribution>())
+            .decl(&decl::<ToolForm>())
+            .decl(&decl::<ToolFormSection>())
+            .decl(&decl::<ToolFormField>())
+            .decl(&decl::<ToolFormFieldType>())
+            .decl(&decl::<ToolFormOption>())
             .decl(&decl::<ExtensionCapabilities>())
             .decl(&decl::<CommandContribution>())
             .decl(&decl::<KeybindingContribution>())

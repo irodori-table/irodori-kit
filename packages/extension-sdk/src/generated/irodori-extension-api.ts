@@ -4,13 +4,25 @@ export type JsonValue = unknown;
 
 export type ExtensionRuntime = "declarative" | "typescript" | "javascript" | "wasm" | "native";
 
-export type PermissionScope = "hostFeatures" | "commands" | "keybindings" | "workspace:read" | "connections:read" | "connections:write" | "connectors" | "queries:run" | "queryResults:read" | "queryResults:write" | "metadata:read" | "files:read" | "files:write" | "themes" | "sqlDialects" | "statusBar" | "resultRenderers" | "logs" | "dev:fixtures" | "native" | "wasm";
+export type PermissionScope = "hostFeatures" | "commands" | "keybindings" | "workspace:read" | "connections:read" | "connections:write" | "connectors" | "tools" | "queries:run" | "queryResults:read" | "queryResults:write" | "metadata:read" | "files:read" | "files:write" | "themes" | "sqlDialects" | "statusBar" | "resultRenderers" | "logs" | "dev:fixtures" | "native" | "wasm";
 
 export type ExtensionManifest = { manifestVersion: number, id: string, name: string, version: string, publisher?: string, description?: string, license: string, repository?: string, apiVersion: string, runtime: ExtensionRuntime, entry: string, permissions: Array<PermissionScope>, contributes: ExtensionContributions, capabilities: ExtensionCapabilities, dev?: ExtensionDevConfig, };
 
-export type ExtensionContributions = { hostFeatures: Array<HostFeature>, commands: Array<CommandContribution>, keybindings: Array<KeybindingContribution>, resultGridActions: Array<ResultGridActionContribution>, resultGridRenderers: Array<ResultGridRendererContribution>, statusBarItems: Array<StatusBarItemContribution>, themes: Array<ThemeContribution>, sqlDialects: Array<SqlDialectContribution>, connectors: Array<ConnectorContribution>, };
+export type ExtensionContributions = { hostFeatures: Array<HostFeature>, commands: Array<CommandContribution>, keybindings: Array<KeybindingContribution>, resultGridActions: Array<ResultGridActionContribution>, resultGridRenderers: Array<ResultGridRendererContribution>, statusBarItems: Array<StatusBarItemContribution>, themes: Array<ThemeContribution>, sqlDialects: Array<SqlDialectContribution>, connectors: Array<ConnectorContribution>, tools: Array<ToolContribution>, };
 
 export type HostFeature = "knowledge" | "datalake";
+
+export type ToolContribution = { id: string, title: { [key in string]: string }, shortcut?: string, form: ToolForm, };
+
+export type ToolForm = { sections: Array<ToolFormSection>, };
+
+export type ToolFormSection = { columns?: number, fields: Array<ToolFormField>, };
+
+export type ToolFormField = { id: string, label: { [key in string]: string }, type: ToolFormFieldType, default?: JsonValue, options?: Array<ToolFormOption>, min?: number, max?: number, step?: number, };
+
+export type ToolFormFieldType = "string" | "number" | "boolean" | "select" | "lines";
+
+export type ToolFormOption = { value: string, label: { [key in string]: string }, };
 
 export type ExtensionCapabilities = { wasmModules: Array<WasmModuleContribution>, nativeModules: Array<NativeModuleContribution>, };
 

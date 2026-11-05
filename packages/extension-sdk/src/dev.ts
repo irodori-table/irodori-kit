@@ -92,6 +92,11 @@ const contributionPermissionRules: readonly PermissionRequirementRule<Contributi
     permission: "connectors",
     message: "contributes.connectors requires permissions: connectors",
   },
+  {
+    key: "tools",
+    permission: "tools",
+    message: "contributes.tools requires permissions: tools",
+  },
 ];
 
 const capabilityPermissionRules: readonly PermissionRequirementRule<CapabilityKey>[] = [
